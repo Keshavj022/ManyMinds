@@ -1,0 +1,25 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+pydantic-settings==2.7.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1  # passlib 1.7.4 incompatible with bcrypt>=4.1 (raises "password longer than 72 bytes")
+python-jose[cryptography]==3.3.0
+python-dotenv==1.0.1
+email-validator==2.2.0
+httpx==0.28.1
+neo4j==5.27.0       # async driver — used by app/services/memory_graph.py
+aiosmtplib==3.0.2   # async SMTP — used by app/services/email_provider.py
+
+# ---- Azure data plane (primary database — Cosmos DB NoSQL API)
+# Async SDK; loaded by app/core/database.py. App falls into stub-mode
+# automatically when COSMOS_ENDPOINT / COSMOS_KEY are unset.
+azure-cosmos==4.7.0
+
+# ---- Azure AI services
+# Each is lazy-loaded by its own service wrapper and stub-falls-back
+# when AZURE_*_KEY / *_ENDPOINT are missing.
+openai>=1.40.0                          # Azure OpenAI via the openai SDK (services/llm.py)
+azure-ai-vision-imageanalysis==1.0.0    # Image Analysis 4.0 (services/azure_vision.py)
+azure-ai-textanalytics==5.3.0           # sentiment + language detection (services/azure_language.py)
+azure-core==1.32.0                      # shared base for the Azure SDKs above

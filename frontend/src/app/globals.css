@@ -1,0 +1,361 @@
+@import "tailwindcss";
+
+/* ============================================================
+   ManyMinds — Design System (Calm Edition)
+   ------------------------------------------------------------
+   Single accent (Lilac) with a warm secondary (Blush).
+   Council members keep distinct hues but live inside a tight,
+   desaturated family so the whole product reads as one room.
+   Glass is one tier (`.glass`); `.glass-strong` is reserved for
+   modals/popovers. Default state is calm — animations exist
+   but only run on explicit opt-in.
+   ============================================================ */
+
+@theme {
+  /* Canvas — neutral, lightly violet-tinted dark */
+  --color-canvas-50:  #1a1822;
+  --color-canvas-100: #14121b;
+  --color-canvas-200: #100e16;
+  --color-canvas-300: #0b0a11;
+  --color-canvas-400: #0a0910;       /* page background */
+  --color-canvas-500: #06050a;
+
+  /* Surface layers — flatter, less contrast between tiers */
+  --color-surface:        #14121b;
+  --color-surface-2:      #191622;
+  --color-surface-3:      #1f1b2a;
+
+  /* Text — softer hierarchy, no near-pure white */
+  --color-ink:        #eceaf3;
+  --color-ink-dim:    #b8b2c4;
+  --color-ink-muted:  #7a7589;
+  --color-ink-faint:  #45414f;
+
+  /* Brand — one accent family.
+     Lilac is the primary; Blush is the secondary warm.
+     Together they form the (now subtle) "aurora". */
+  --color-accent:        #9b87d8;    /* Lilac — primary */
+  --color-accent-soft:   rgba(155, 135, 216, 0.14);
+  --color-accent-strong: #8b73d0;
+  --color-accent-2:      #d8a3b8;    /* Blush — warm secondary */
+  --color-accent-2-soft: rgba(216, 163, 184, 0.14);
+
+  /* Council member signature colors — desaturated, single family.
+     Each member still has a distinct hue across a cool→warm gradient
+     so they're recognisable, but no one shouts. ~55-65% sat. */
+  --color-aria:      #7fb5d4;   /* Analyst — muted sky */
+  --color-aria-soft: rgba(127, 181, 212, 0.12);
+  --color-rex:       #d49a7a;   /* Provocateur — muted amber */
+  --color-rex-soft:  rgba(212, 154, 122, 0.12);
+  --color-sage:      #9b87d8;   /* Architect — lilac (brand) */
+  --color-sage-soft: rgba(155, 135, 216, 0.14);
+  --color-nova:      #c89bc4;   /* Creator — muted mauve */
+  --color-nova-soft: rgba(200, 155, 196, 0.12);
+  --color-echo:      #d8a3b8;   /* Empath — blush */
+  --color-echo-soft: rgba(216, 163, 184, 0.12);
+
+  /* Legacy aurora aliases — collapsed onto the brand family so any
+     hard-coded usage in components quietens automatically. */
+  --color-accent-aurora-1: #9b87d8;
+  --color-accent-aurora-2: #b495d0;
+  --color-accent-aurora-3: #c89bc4;
+  --color-accent-aurora-4: #d8a3b8;
+  --color-accent-aurora-5: #9b87d8;
+
+  /* Semantic — desaturated */
+  --color-success:  #7fc599;
+  --color-warning:  #d9b56a;
+  --color-danger:   #d97c7c;
+
+  /* Typography */
+  --font-headline: "Space Grotesk", sans-serif;
+  --font-body:     "Inter", sans-serif;
+  --font-label:    "Manrope", sans-serif;
+  --font-display:  "Space Grotesk", sans-serif;
+
+  /* Radius — slightly tighter */
+  --radius-DEFAULT: 0.5rem;
+  --radius-md:      0.75rem;
+  --radius-lg:      1rem;
+  --radius-xl:      1.5rem;
+  --radius-2xl:     2rem;
+  --radius-full:    9999px;
+
+  /* Shadows / Glow — softer, no chromatic glow by default */
+  --shadow-soft:    0 6px 18px rgba(0,0,0,0.32);
+  --shadow-elev:    0 16px 36px rgba(0,0,0,0.4);
+  --shadow-glow:    0 0 24px rgba(155, 135, 216, 0.18);
+
+  /* Hairline border — single canonical value */
+  --border-hairline: rgba(255, 255, 255, 0.06);
+  --border-hairline-strong: rgba(255, 255, 255, 0.10);
+}
+
+/* ============================================================
+   Glass — one canonical tier
+   ------------------------------------------------------------
+   `.glass` is the default surface. `.glass-strong` is reserved
+   for elements that float over content (modals, popovers,
+   floating chip rows). `.glass-soft` and `.glass-card` are
+   compatibility aliases that resolve to `.glass`.
+   ============================================================ */
+.glass,
+.glass-card,
+.glass-soft {
+  background: rgba(20, 18, 27, 0.72);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid var(--border-hairline);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.glass-strong {
+  background: rgba(20, 18, 27, 0.88);
+  backdrop-filter: blur(24px) saturate(130%);
+  -webkit-backdrop-filter: blur(24px) saturate(130%);
+  border: 1px solid var(--border-hairline-strong);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================
+   Brand text — soft duotone, NOT animated
+   ------------------------------------------------------------
+   `.aurora-text` and `.chrome-text` collapse to a calm static
+   lilac→blush gradient. The animated `aurora-drift` keyframes
+   still exist but only fire on `.aurora-text-animated`.
+   ============================================================ */
+.aurora-text,
+.chrome-text {
+  background: linear-gradient(110deg, #b495d0 0%, #d8a3b8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.aurora-text-animated {
+  background: linear-gradient(110deg, #b495d0 0%, #d8a3b8 50%, #b495d0 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: aurora-drift 18s ease-in-out infinite;
+}
+@keyframes aurora-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* Council member text-color shortcuts */
+.text-aria { color: var(--color-aria); }
+.text-rex  { color: var(--color-rex); }
+.text-sage { color: var(--color-sage); }
+.text-nova { color: var(--color-nova); }
+.text-echo { color: var(--color-echo); }
+
+/* Council member subtle background shortcuts */
+.bg-aria-soft { background: var(--color-aria-soft); }
+.bg-rex-soft  { background: var(--color-rex-soft); }
+.bg-sage-soft { background: var(--color-sage-soft); }
+.bg-nova-soft { background: var(--color-nova-soft); }
+.bg-echo-soft { background: var(--color-echo-soft); }
+
+/* ============================================================
+   Gradients & background washes — quieter, no animation
+   ============================================================ */
+.aurora-gradient,
+.chrome-gradient {
+  background: linear-gradient(110deg, #9b87d8 0%, #d8a3b8 100%);
+}
+
+.hero-gradient {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(155, 135, 216, 0.10), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(216, 163, 184, 0.06), transparent 70%),
+    #0a0910;
+}
+
+.warm-glow {
+  background:
+    radial-gradient(ellipse 50% 35% at 50% 50%, rgba(216, 163, 184, 0.08), transparent 70%);
+}
+
+/* ============================================================
+   Glow rings — much softer; reserved for hover/active states
+   ============================================================ */
+.glow-aria { box-shadow: 0 0 16px rgba(127, 181, 212, 0.22); }
+.glow-rex  { box-shadow: 0 0 16px rgba(212, 154, 122, 0.22); }
+.glow-sage { box-shadow: 0 0 16px rgba(155, 135, 216, 0.22); }
+.glow-nova { box-shadow: 0 0 16px rgba(200, 155, 196, 0.22); }
+.glow-echo { box-shadow: 0 0 16px rgba(216, 163, 184, 0.22); }
+.glow-ring { box-shadow: 0 0 10px currentColor; }
+
+/* ============================================================
+   Borders — animated border is opt-in only
+   ============================================================ */
+.border-aurora {
+  position: relative;
+  background-clip: padding-box;
+  border: 1px solid transparent;
+}
+.border-aurora::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(110deg, #9b87d8, #d8a3b8);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ============================================================
+   Animation keyframes — present but no default usage
+   ------------------------------------------------------------
+   Most of these were running on background elements 24/7. They
+   now only fire if a component explicitly opts in. We keep the
+   keyframes so opt-in still works.
+   ============================================================ */
+@keyframes drift-slow {
+  0%, 100% { transform: translate(0, 0); }
+  33%      { transform: translate(24px, -16px); }
+  66%      { transform: translate(-18px, 12px); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.02); }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+  30%           { transform: translateY(-3px); opacity: 1; }
+}
+
+.animate-drift-slow { animation: drift-slow 28s ease-in-out infinite; }
+.animate-pulse-soft { animation: pulse-soft 6s ease-in-out infinite; }
+.animate-float      { animation: float-y 8s ease-in-out infinite; }
+.animate-shimmer    {
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 3.2s linear infinite;
+}
+
+/* Typing indicator dots */
+.typing-dots > span {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 1px;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+.typing-dots > span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots > span:nth-child(3) { animation-delay: 0.3s; }
+
+/* Respect reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-drift-slow,
+  .animate-pulse-soft,
+  .animate-float,
+  .animate-shimmer,
+  .aurora-text-animated {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   Scrollbar — neutral, single tone
+   ============================================================ */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(155, 135, 216, 0.22);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 135, 216, 0.38);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+html { scroll-behavior: smooth; }
+body {
+  background-color: #0a0910;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  /* One subtle wash, top-only — no second gradient fighting it */
+  background-image:
+    radial-gradient(ellipse 100% 50% at 50% -20%, rgba(155, 135, 216, 0.08), transparent 60%);
+  background-attachment: fixed;
+}
+
+::selection { background-color: rgba(155, 135, 216, 0.32); color: white; }
+
+/* Inputs: consistent base */
+input, textarea, select {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-hairline);
+  color: var(--color-ink);
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: rgba(155, 135, 216, 0.45);
+  background: rgba(255,255,255,0.04);
+  box-shadow: 0 0 0 3px rgba(155, 135, 216, 0.14);
+}
+
+/* Material Symbols base */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Utility helpers */
+.dot-grid {
+  background-image:
+    radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.noise {
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1   0 0 0 0 1   0 0 0 0 1   0 0 0 0.025 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-repeat: repeat;
+}
+
+/* Range slider — neutral thumb, single color, no glow ring */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 9999px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  background: var(--color-accent);
+  border-radius: 9999px;
+  border: 2px solid rgba(20, 18, 27, 0.9);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}

@@ -1,0 +1,42 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Secrets & env (keep the example template)
+.env
+.env.*
+!.env.example
+env-text.txt
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Node / Next
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+database/
+
+# Claude / agent tooling — kept local, never committed
+CLAUDE.md
+**/CLAUDE.md
+.claude/
+.claude-flow/
+.swarm/
+.cache/
