@@ -8,9 +8,10 @@ import AuroraButton from "@/components/ui/AuroraButton";
 type LenisLike = { scrollTo: (target: string | number | HTMLElement) => void };
 
 const NAV_LINKS: ReadonlyArray<{ label: string; hash: string }> = [
+  { label: "The Journey", hash: "#council-journey" },
   { label: "Council", hash: "#about" },
-  { label: "Debate", hash: "#debate" },
-  { label: "Games", hash: "#games" },
+  { label: "Worlds", hash: "#environments" },
+  { label: "Memory", hash: "#memory" },
   { label: "How it works", hash: "#how-it-works" },
 ];
 

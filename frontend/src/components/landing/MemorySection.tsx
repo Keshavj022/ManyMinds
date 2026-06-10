@@ -141,7 +141,7 @@ export default function MemorySection() {
       <div className="max-w-7xl mx-auto">
         <SectionHeader
           align="center"
-          kicker="Feature 03"
+          kicker="07 · They remember"
           title={
             <>
               They <span className="aurora-text">remember</span> the shape of

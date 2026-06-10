@@ -1,12 +1,20 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import AuroraButton from "@/components/ui/AuroraButton";
+import { useEffect, useState } from "react";
+import {
+  AuthField,
+  BusyButton,
+  EASE,
+  ErrorChip,
+  FormHeader,
+  MemberQuip,
+} from "@/components/auth/FormKit";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
+import { COUNCIL_MEMBERS } from "@/lib/design-tokens";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +23,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // One member says hi — picked on mount, static after (the layout already
+  // has the rotating greeting). Chosen client-side to avoid hydration drift.
+  const [quipIdx, setQuipIdx] = useState<number | null>(null);
+  useEffect(() => {
+    setQuipIdx(Math.floor(Math.random() * COUNCIL_MEMBERS.length));
+  }, []);
+  const quipMember = quipIdx !== null ? COUNCIL_MEMBERS[quipIdx] : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +51,9 @@ export default function LoginPage() {
       const msg =
         err instanceof ApiError
           ? err.status === 401
-            ? "Wrong email or password."
+            ? "Hmm, that email and password don't line up. One more try?"
             : err.message
-          : "Couldn't sign in. Try again in a moment.";
+          : "Couldn't get you in just now. Give it another go in a moment.";
       setError(msg);
     } finally {
       setBusy(false);
@@ -48,95 +64,82 @@ export default function LoginPage() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.45, ease: EASE }}
       className="w-full"
     >
-      <div className="mb-8 text-center md:text-left">
-        <p className="text-[11px] font-[var(--font-label)] uppercase tracking-[0.32em] text-white/55 mb-3">
-          Sign in
-        </p>
-        <h2 className="font-[var(--font-headline)] text-3xl md:text-4xl font-semibold text-white mb-2">
-          Welcome <span className="aurora-text">back</span>
-        </h2>
-        <p className="text-white/55 text-sm">Your council is waiting.</p>
-      </div>
+      <FormHeader
+        kicker="Sign in"
+        title={
+          <>
+            Welcome <span className="aurora-text">back</span>
+          </>
+        }
+        sub="They kept your seat warm."
+      >
+        <div className="mt-4 flex min-h-[26px] justify-center md:justify-start">
+          <AnimatePresence>
+            {quipMember && (
+              <MemberQuip
+                key={quipMember.id}
+                id={quipMember.id}
+                text={quipMember.signatureGreeting}
+              />
+            )}
+          </AnimatePresence>
+        </div>
+      </FormHeader>
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        <div className="space-y-1.5">
-          <label
-            htmlFor="login-email"
-            className="block text-xs font-[var(--font-label)] font-semibold text-white/70 ml-1"
-          >
-            Email
-          </label>
-          <input
-            id="login-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            className="w-full rounded-xl px-4 py-3 text-white placeholder:text-white/30 text-sm"
-            placeholder="you@example.com"
-          />
-        </div>
+        <AuthField
+          id="login-email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+          placeholder="you@example.com"
+        />
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between ml-1">
-            <label
-              htmlFor="login-password"
-              className="text-xs font-[var(--font-label)] font-semibold text-white/70"
-            >
-              Password
-            </label>
+        <AuthField
+          id="login-password"
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+          placeholder="••••••••"
+          labelEnd={
             <Link
               href="/forgot-password"
-              className="text-xs text-white/55 hover:text-white transition-colors"
+              className="text-xs text-white/55 transition-colors hover:text-white"
             >
               Forgot?
             </Link>
-          </div>
-          <input
-            id="login-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            className="w-full rounded-xl px-4 py-3 text-white placeholder:text-white/30 text-sm"
-            placeholder="••••••••"
-          />
-        </div>
+          }
+        />
 
-        {error && (
-          <p
-            role="alert"
-            className="text-sm text-[color:var(--color-danger)] bg-[color:var(--color-danger)]/10 border border-[color:var(--color-danger)]/30 rounded-xl px-3 py-2"
-          >
-            {error}
-          </p>
-        )}
+        <AnimatePresence>{error && <ErrorChip>{error}</ErrorChip>}</AnimatePresence>
 
         <div className="pt-1">
-          <AuroraButton
-            type="submit"
-            variant="primary"
-            size="lg"
-            fullWidth
-            disabled={busy || !email || !password}
+          <BusyButton
+            busy={busy}
+            busyLabel="Letting them know you're here…"
+            disabled={!email || !password}
           >
-            {busy ? "Signing you in…" : "Sign In"}
-          </AuroraButton>
+            Step back in
+          </BusyButton>
         </div>
       </form>
 
       <p className="mt-7 text-center text-sm text-white/55">
-        New here?{" "}
+        First time here?{" "}
         <Link
           href="/signup"
-          className="text-white font-semibold hover:underline hover:underline-offset-4 decoration-white/30"
+          className="font-semibold text-white decoration-white/30 hover:underline hover:underline-offset-4"
         >
-          Build your council
+          Come meet everyone
         </Link>
       </p>
     </motion.div>

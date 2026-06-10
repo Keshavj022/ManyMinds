@@ -12,11 +12,10 @@ import { gameHistorySummary, GameResultRecord, loadGameHistory } from "@/lib/gam
 // ---------- Mini previews ----------
 
 function ChessPreview() {
-  // 8x8 mini board CSS grid
   const squares: number[] = [];
   for (let i = 0; i < 64; i++) squares.push(i);
   return (
-    <div className="relative w-40 h-40 rounded-2xl overflow-hidden border border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
+    <div className="relative w-40 h-40 rounded-2xl overflow-hidden border border-white/[0.06] shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
       <div className="absolute inset-0 grid grid-cols-8 grid-rows-8">
         {squares.map((i) => {
           const row = Math.floor(i / 8);
@@ -30,7 +29,6 @@ function ChessPreview() {
           );
         })}
       </div>
-      {/* Mock pieces */}
       <div className="absolute inset-0 grid grid-cols-8 grid-rows-8 text-white/85 text-sm font-bold">
         <div className="col-start-5 row-start-2 grid place-items-center text-violet-200">♟</div>
         <div className="col-start-4 row-start-7 grid place-items-center text-amber-200">♞</div>
@@ -41,7 +39,6 @@ function ChessPreview() {
 }
 
 function TODPreview() {
-  // rotating cluster of member avatars
   const members: CouncilMemberId[] = ["aria", "rex", "sage", "nova", "echo"];
   return (
     <div className="relative w-40 h-40 grid place-items-center">
@@ -68,7 +65,7 @@ function TODPreview() {
           );
         })}
       </motion.div>
-      <div className="w-14 h-14 rounded-full grid place-items-center bg-white/[0.04] border border-white/10 backdrop-blur-md text-xs font-bold text-white/90 font-[var(--font-headline)]">
+      <div className="w-14 h-14 rounded-full grid place-items-center bg-white/[0.04] border border-white/[0.06] backdrop-blur-md text-xs font-bold text-white/90 font-[var(--font-headline)]">
         T or D
       </div>
     </div>
@@ -76,7 +73,6 @@ function TODPreview() {
 }
 
 function LudoPreview() {
-  // Mini cross-shape ludo board
   const cellSize = "w-2 h-2";
   return (
     <div className="relative w-40 h-40 grid place-items-center">
@@ -94,20 +90,19 @@ function LudoPreview() {
             (r > 4 && c > 4);
 
           let color = "bg-transparent";
-          if (isCorner && r < 2 && c < 2) color = "bg-[rgba(127,181,212,0.35)]";  // blue (user) top-left
-          else if (isCorner && r < 2 && c > 4) color = "bg-[rgba(212,154,122,0.35)]"; // red (Rex)
-          else if (isCorner && r > 4 && c < 2) color = "bg-[rgba(216,163,184,0.35)]"; // yellow (Nova) — using magenta for vibrancy
-          else if (isCorner && r > 4 && c > 4) color = "bg-[rgba(216,163,184,0.35)]"; // green/rose (Echo)
+          if (isCorner && r < 2 && c < 2) color = "bg-[rgba(127,181,212,0.35)]";
+          else if (isCorner && r < 2 && c > 4) color = "bg-[rgba(212,154,122,0.35)]";
+          else if (isCorner && r > 4 && c < 2) color = "bg-[rgba(200,155,196,0.35)]";
+          else if (isCorner && r > 4 && c > 4) color = "bg-[rgba(216,163,184,0.35)]";
           else if (isCenter) color = "bg-white/15";
           else if (isVertical || isHorizontal) color = "bg-white/[0.06]";
 
           return <div key={i} className={`${cellSize} rounded-[2px] ${color}`} />;
         })}
       </div>
-      {/* Tokens */}
       <div className="absolute inset-0 grid place-items-center">
         <div className="w-3 h-3 rounded-full bg-[#7fb5d4] shadow-[0_0_8px_rgba(127,181,212,0.6)] -translate-x-7 -translate-y-2" />
-        <div className="w-3 h-3 rounded-full bg-[#d49a7a] shadow-[0_0_8px_rgba(212,154,122,0.6)] translate-x-3 -translate-y-8" />
+        <div className="w-3 h-3 rounded-full bg-[#c89bc4] shadow-[0_0_8px_rgba(200,155,196,0.6)] translate-x-3 -translate-y-8" />
         <div className="w-3 h-3 rounded-full bg-[#d8a3b8] shadow-[0_0_8px_rgba(216,163,184,0.6)] translate-x-8 translate-y-5" />
       </div>
     </div>
@@ -122,31 +117,40 @@ type GameDef = {
   blurb: string;
   preview: () => ReactElement;
   haloMember: CouncilMemberId;
-  badge?: { memberId: CouncilMemberId; label: string };
+  hosts: CouncilMemberId[];
+  hostLabel: string;
 };
 
 const GAMES: GameDef[] = [
   {
     id: "chess",
     title: "Chess",
-    blurb: "A tactical match. Aria sees four moves ahead. Sage may kibitz.",
+    blurb:
+      "Aria has the openings memorized. Rex just wants to see chaos on the board. Pick a side — or take them both on.",
     preview: ChessPreview,
     haloMember: "aria",
-    badge: { memberId: "aria", label: "vs. Aria" },
-  },
-  {
-    id: "truth-or-dare",
-    title: "Truth or Dare",
-    blurb: "The whole council plays. Probing questions. Dares with consequences.",
-    preview: TODPreview,
-    haloMember: "nova",
+    hosts: ["aria", "rex"],
+    hostLabel: "Aria vs Rex",
   },
   {
     id: "ludo",
     title: "Ludo",
-    blurb: "4-player chaos with Rex, Nova, and Echo.",
+    blurb:
+      "Four tokens, one die, zero mercy. Nova invented house rules nobody agreed to, and somehow they stuck.",
     preview: LudoPreview,
-    haloMember: "rex",
+    haloMember: "nova",
+    hosts: ["nova"],
+    hostLabel: "Nova's chaos",
+  },
+  {
+    id: "truth-or-dare",
+    title: "Truth or Dare",
+    blurb:
+      "The whole circle plays. Echo opens with a gentle one. It does not stay gentle.",
+    preview: TODPreview,
+    haloMember: "echo",
+    hosts: ["echo"],
+    hostLabel: "Echo asks first",
   },
 ];
 
@@ -172,23 +176,25 @@ export default function GamesHub() {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="space-y-10"
     >
-      {/* HEADER STRIP */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5 relative">
+      {/* HEADER */}
+      <div className="relative pb-2">
         <GradientOrb color="violet" size="lg" intensity={0.25} className="-top-20 -left-20" />
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="h-px w-8 bg-gradient-to-r from-transparent to-white/40" />
-            <p className="text-[10px] tracking-[0.32em] uppercase font-bold font-[var(--font-label)] text-white/55">
-              Council Games
+            <p className="text-[11px] tracking-[0.32em] uppercase font-[var(--font-label)] font-semibold text-white/55">
+              Game night
             </p>
           </div>
           <h1 className="font-[var(--font-headline)] text-4xl font-bold text-white tracking-tight">
-            Games Hub
+            Pick a game.
           </h1>
-          <p className="text-white/55 mt-2 max-w-xl">
-            Play with your council. They keep score, they keep banter, and yes — they remember.
+          <p className="text-white/55 mt-3 max-w-xl leading-relaxed">
+            They keep score, they talk a respectful amount of trash, and yes —
+            they remember who won last time.
           </p>
         </div>
       </div>
@@ -203,62 +209,55 @@ export default function GamesHub() {
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ y: -4, scale: 1.01 }}
+              className="h-full"
             >
               <Link href={`/games/${g.id}`} className="block group h-full">
                 <GlassCard
                   variant="default"
-                  className="relative h-full rounded-3xl p-6 flex flex-col transition-all duration-500 group-hover:-translate-y-1 overflow-hidden"
+                  className="relative h-full rounded-3xl p-7 flex flex-col overflow-hidden"
                 >
-                  {/* halo */}
+                  {/* warm halo in the host's hue */}
                   <div
                     aria-hidden
-                    className="absolute -top-24 -right-24 w-56 h-56 rounded-full blur-3xl opacity-40 group-hover:opacity-90 transition-opacity"
+                    className="absolute -top-24 -right-24 w-56 h-56 rounded-full blur-3xl opacity-40 group-hover:opacity-80 transition-opacity duration-500"
                     style={{ background: `radial-gradient(circle, ${c.hex}55, transparent 70%)` }}
                   />
-                  {/* aurora border on hover */}
+
+                  {/* host badge */}
                   <div
-                    aria-hidden
-                    className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-5 right-5 inline-flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border z-10"
                     style={{
-                      padding: "1px",
-                      background: "linear-gradient(110deg, #9b87d8, #d8a3b8)",
-                      WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-                      WebkitMaskComposite: "xor",
-                      maskComposite: "exclude",
-                      pointerEvents: "none",
+                      background: c.soft,
+                      borderColor: `${c.hex}55`,
+                      color: c.hex,
                     }}
-                  />
+                  >
+                    <span className="flex -space-x-1.5">
+                      {g.hosts.map((h) => (
+                        <MemberAvatar key={h} id={h} size="xs" />
+                      ))}
+                    </span>
+                    {g.hostLabel}
+                  </div>
 
-                  {/* badge */}
-                  {g.badge && (
-                    <div
-                      className="absolute top-4 right-4 inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border z-10"
-                      style={{
-                        background: councilColors[g.badge.memberId].soft,
-                        borderColor: `${councilColors[g.badge.memberId].hex}66`,
-                        color: councilColors[g.badge.memberId].hex,
-                      }}
-                    >
-                      <MemberAvatar id={g.badge.memberId} size="xs" />
-                      {g.badge.label}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-center py-2 z-10">
+                  <div className="flex items-center justify-center py-3 z-10">
                     {g.preview()}
                   </div>
 
-                  <h3 className="text-xl font-bold text-white font-[var(--font-headline)] tracking-tight mt-4 z-10">
+                  <h3 className="text-xl font-bold text-white font-[var(--font-headline)] tracking-tight mt-5 z-10">
                     {g.title}
                   </h3>
                   <p className="text-white/55 text-sm leading-relaxed mt-2 flex-1 z-10">
                     {g.blurb}
                   </p>
 
-                  <div className="mt-6 z-10">
-                    <span className="inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-tight transition-all duration-200 px-4 py-2 text-sm aurora-gradient text-[#0d0b14] shadow-[0_8px_28px_-8px_rgba(155,135,216,0.65)] group-hover:shadow-[0_12px_40px_-8px_rgba(216,163,184,0.7)] group-hover:brightness-110">
+                  <div className="mt-7 z-10">
+                    <span className="inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-tight px-5 py-2.5 text-sm bg-[var(--color-accent)] text-[#15121d] shadow-[0_4px_14px_-4px_rgba(155,135,216,0.5)] transition-all duration-200 group-hover:bg-[var(--color-accent-strong)] group-hover:shadow-[0_8px_24px_-6px_rgba(155,135,216,0.6)]">
                       Play
-                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                      <span className="material-symbols-outlined text-[16px] transition-transform duration-200 group-hover:translate-x-0.5">
+                        arrow_forward
+                      </span>
                     </span>
                   </div>
                 </GlassCard>
@@ -268,59 +267,78 @@ export default function GamesHub() {
         })}
       </div>
 
-      {/* STATS ROW */}
+      {/* SCOREBOARD */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
         className="grid grid-cols-2 md:grid-cols-4 gap-4"
       >
-        <GlassCard variant="soft" className="rounded-2xl p-4">
-          <div className="text-[10px] uppercase tracking-wider text-white/45 font-bold">Total</div>
-          <div className="text-2xl font-bold text-white font-[var(--font-headline)] mt-1">{summary.total}</div>
-        </GlassCard>
-        <GlassCard variant="soft" className="rounded-2xl p-4">
-          <div className="text-[10px] uppercase tracking-wider text-white/45 font-bold">W / L / D</div>
-          <div className="text-2xl font-bold text-white font-[var(--font-headline)] mt-1">
-            <span className="text-emerald-300">{summary.wins}</span>
-            <span className="text-white/30 mx-1">/</span>
-            <span className="text-rose-300">{summary.losses}</span>
-            <span className="text-white/30 mx-1">/</span>
+        <StatCard label="Games played" value={String(summary.total)} />
+        <GlassCard variant="soft" className="rounded-2xl p-5">
+          <div className="text-[11px] uppercase tracking-[0.32em] text-white/45 font-[var(--font-label)] font-semibold">
+            Wins · losses · draws
+          </div>
+          <div className="text-2xl font-bold text-white font-[var(--font-headline)] mt-1.5">
+            <span className="text-[#7fb5d4]">{summary.wins}</span>
+            <span className="text-white/30 mx-1">·</span>
+            <span className="text-[#d8a3b8]">{summary.losses}</span>
+            <span className="text-white/30 mx-1">·</span>
             <span className="text-white/60">{summary.draws}</span>
           </div>
         </GlassCard>
-        <GlassCard variant="soft" className="rounded-2xl p-4">
-          <div className="text-[10px] uppercase tracking-wider text-white/45 font-bold">Streak</div>
-          <div className="text-2xl font-bold font-[var(--font-headline)] mt-1" style={{
-            color: summary.streak > 0 ? "#86efac" : summary.streak < 0 ? "#d8a3b8" : "#ffffff",
-          }}>
+        <GlassCard variant="soft" className="rounded-2xl p-5">
+          <div className="text-[11px] uppercase tracking-[0.32em] text-white/45 font-[var(--font-label)] font-semibold">
+            Streak
+          </div>
+          <div
+            className="text-2xl font-bold font-[var(--font-headline)] mt-1.5"
+            style={{
+              color:
+                summary.streak > 0
+                  ? "var(--color-warm)"
+                  : summary.streak < 0
+                    ? "#d8a3b8"
+                    : "#ffffff",
+            }}
+          >
             {summary.streak > 0 ? `+${summary.streak}` : summary.streak === 0 ? "—" : summary.streak}
           </div>
         </GlassCard>
-        <GlassCard variant="soft" className="rounded-2xl p-4">
-          <div className="text-[10px] uppercase tracking-wider text-white/45 font-bold">Last played</div>
-          <div className="text-sm font-bold text-white mt-1 truncate font-[var(--font-headline)]">
+        <GlassCard variant="soft" className="rounded-2xl p-5">
+          <div className="text-[11px] uppercase tracking-[0.32em] text-white/45 font-[var(--font-label)] font-semibold">
+            Last played
+          </div>
+          <div className="text-sm font-bold text-white mt-1.5 truncate font-[var(--font-headline)]">
             {summary.last ? labelGame(summary.last.game) : "Nothing yet"}
           </div>
           {summary.last && (
-            <div className="text-[11px] text-white/45 mt-0.5">{formatRelative(summary.last.ts)} · {summary.last.outcome}</div>
+            <div className="text-[11px] text-white/45 mt-0.5">
+              {formatRelative(summary.last.ts)} · {summary.last.outcome}
+            </div>
           )}
         </GlassCard>
       </motion.div>
 
-      {/* RECENT MATCHES (when present) */}
+      {/* RECENT MATCHES */}
       {history.length > 0 && (
-        <GlassCard variant="default" className="rounded-3xl p-6">
+        <GlassCard variant="default" className="rounded-3xl p-7">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-[var(--font-headline)] text-lg font-bold text-white">Recent Matches</h2>
-            <span className="text-[10px] text-white/40 uppercase tracking-wider">last 5</span>
+            <h2 className="font-[var(--font-headline)] text-lg font-bold text-white">
+              Lately at the table
+            </h2>
+            <span className="text-[11px] text-white/40 uppercase tracking-[0.32em] font-[var(--font-label)]">
+              last 5
+            </span>
           </div>
           <ul className="divide-y divide-white/5">
             {history.map((h) => (
-              <li key={h.id} className="py-2.5 flex items-center justify-between text-sm">
-                <span className="text-white/85 font-bold">{labelGame(h.game)}</span>
-                <span className="text-white/60 truncate max-w-md text-right">{h.detail ?? h.outcome}</span>
-                <span className="text-[11px] text-white/40 w-20 text-right">{formatRelative(h.ts)}</span>
+              <li key={h.id} className="py-3 flex items-center justify-between gap-4 text-sm">
+                <span className="text-white/85 font-bold shrink-0">{labelGame(h.game)}</span>
+                <span className="text-white/60 truncate text-right flex-1">{h.detail ?? h.outcome}</span>
+                <span className="text-[11px] text-white/40 w-20 text-right shrink-0">
+                  {formatRelative(h.ts)}
+                </span>
               </li>
             ))}
           </ul>
@@ -328,11 +346,12 @@ export default function GamesHub() {
       )}
 
       {/* COMING SOON */}
-      <GlassCard variant="soft" className="rounded-3xl p-6 border-dashed text-center">
-        <span className="material-symbols-outlined text-white/35 text-3xl">videogame_asset_off</span>
-        <h3 className="text-white font-bold font-[var(--font-headline)] mt-3">Poker, Soon™</h3>
-        <p className="text-white/45 text-sm max-w-sm mx-auto mt-1">
-          Rex has been promising to learn the rules for weeks. Aria has already memorized them.
+      <GlassCard variant="soft" className="rounded-3xl p-7 border-dashed text-center">
+        <span className="material-symbols-outlined text-white/35 text-3xl">style</span>
+        <h3 className="text-white font-bold font-[var(--font-headline)] mt-3">Poker, soon™</h3>
+        <p className="text-white/45 text-sm max-w-sm mx-auto mt-1.5 leading-relaxed">
+          Rex has been promising to learn the rules for weeks. Aria has already
+          memorized them.
         </p>
       </GlassCard>
     </motion.div>
@@ -340,6 +359,19 @@ export default function GamesHub() {
 }
 
 // ---------- helpers ----------
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <GlassCard variant="soft" className="rounded-2xl p-5">
+      <div className="text-[11px] uppercase tracking-[0.32em] text-white/45 font-[var(--font-label)] font-semibold">
+        {label}
+      </div>
+      <div className="text-2xl font-bold text-white font-[var(--font-headline)] mt-1.5">
+        {value}
+      </div>
+    </GlassCard>
+  );
+}
 
 function labelGame(g: "chess" | "truth-or-dare" | "ludo"): string {
   if (g === "chess") return "Chess";

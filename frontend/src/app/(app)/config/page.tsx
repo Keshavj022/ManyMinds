@@ -89,8 +89,8 @@ export default function ConfigPage() {
         if (cancelled) return;
         setStatusMsg(
           err instanceof ApiError
-            ? `Couldn't load council: ${err.message}`
-            : "Couldn't load council.",
+            ? `Couldn't reach the council: ${err.message}`
+            : "Couldn't reach the council.",
         );
       }
     }
@@ -103,6 +103,8 @@ export default function ConfigPage() {
   const member = COUNCIL_MEMBERS.find((m) => m.id === activeId)!;
   const config = configs[activeId];
   const color = councilColors[activeId];
+  const apiActive = memberMap[activeId];
+  const expertise = apiActive?.expertise_areas ?? [];
 
   function updateTrait(dim: BigFiveDimension, value: number) {
     setConfigs((prev) => ({
@@ -171,7 +173,7 @@ export default function ConfigPage() {
         },
       );
       setMemberMap((prev) => ({ ...prev, [updated.slug]: updated }));
-      setStatusMsg("Saved.");
+      setStatusMsg(`Saved — ${member.name} took notes.`);
     } catch (err) {
       setStatusMsg(
         err instanceof ApiError
@@ -184,24 +186,29 @@ export default function ConfigPage() {
   }
 
   return (
-    <div className="space-y-6 pb-6">
+    <div className="space-y-7 pb-6 max-w-6xl mx-auto">
       {/* Page header */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-[var(--font-headline)] text-white tracking-tight">
-            Council configuration
-          </h1>
-          <p className="mt-2 text-sm md:text-base text-white/55 max-w-2xl">
-            Fine-tune how each friend speaks with you. They&apos;ll still be themselves — you&apos;re just adjusting how loud, how warm, how challenging.
+      <header>
+        <div className="inline-flex items-center gap-2 mb-3">
+          <span className="h-px w-8 bg-gradient-to-r from-transparent to-white/40" />
+          <p className="text-[11px] tracking-[0.32em] uppercase font-[var(--font-label)] font-semibold text-white/55">
+            Your council
           </p>
         </div>
+        <h1 className="text-3xl md:text-4xl font-bold font-[var(--font-headline)] text-white tracking-tight">
+          Tune your friends.
+        </h1>
+        <p className="mt-3 text-sm md:text-base text-white/55 max-w-2xl leading-relaxed">
+          They&rsquo;ll still be themselves — you&rsquo;re just choosing how
+          loud, how warm, how challenging they get to be with you.
+        </p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
         {/* Member roster */}
-        <aside className="space-y-1.5">
-          <p className="text-[10px] uppercase tracking-[0.22em] font-[var(--font-label)] font-semibold text-white/45 pl-2 mb-3">
-            Active council
+        <aside className="space-y-2">
+          <p className="text-[11px] uppercase tracking-[0.32em] font-[var(--font-label)] font-semibold text-white/45 pl-2 mb-3">
+            The five
           </p>
           {COUNCIL_MEMBERS.map((m) => (
             <button
@@ -223,13 +230,13 @@ export default function ConfigPage() {
           <button
             type="button"
             disabled
-            className="w-full mt-4 flex items-center gap-3 p-3 rounded-2xl border border-dashed border-white/8 text-white/35 text-sm cursor-not-allowed"
+            className="w-full mt-4 flex items-center gap-3 p-3 rounded-2xl border border-dashed border-white/[0.06] text-white/35 text-sm cursor-not-allowed"
           >
             <span className="w-8 h-8 rounded-full bg-white/[0.04] grid place-items-center">
               <span className="material-symbols-outlined text-[18px]">add</span>
             </span>
             <span className="flex-1">
-              <span className="block font-semibold">Recruit a guest member</span>
+              <span className="block font-semibold">Make room for one more</span>
               <span className="block text-[10px] uppercase tracking-wider text-white/30">
                 Coming soon
               </span>
@@ -244,14 +251,16 @@ export default function ConfigPage() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            <GlassCard variant="default" className="rounded-3xl p-6 lg:p-8">
+            <GlassCard variant="default" className="rounded-3xl p-7 lg:p-8">
               {/* Member header */}
-              <div className="flex flex-col md:flex-row md:items-center gap-5 pb-6 mb-6 border-b border-white/8">
-                <div className="flex items-center gap-4">
-                  <MemberAvatar id={member.id} size="xl" status="online" />
-                  <div>
+              <div className="flex flex-col gap-5 pb-7 mb-7 border-b border-white/[0.06]">
+                <div className="flex items-center gap-5">
+                  <span className="animate-pulse-soft">
+                    <MemberAvatar id={member.id} size="xl" status="online" />
+                  </span>
+                  <div className="min-w-0">
                     <h2 className="text-2xl font-bold font-[var(--font-headline)] text-white">
                       {member.name}
                     </h2>
@@ -261,37 +270,48 @@ export default function ConfigPage() {
                     >
                       {member.role}
                     </p>
-                    <p className="text-xs text-white/55 mt-1 max-w-md leading-snug">
-                      {member.personality}
+                    <p className="text-xs text-white/55 mt-1.5 max-w-md leading-relaxed">
+                      {apiActive?.one_liner ?? member.shortBio}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5 md:ml-auto">
-                  {member.personality.split(" · ").map((trait) => (
-                    <span
-                      key={trait}
-                      className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider font-[var(--font-label)]"
-                      style={{
-                        background: color.soft,
-                        color: color.hex,
-                        border: `1px solid ${color.soft}`,
-                      }}
-                    >
-                      {trait}
-                    </span>
-                  ))}
-                </div>
+                <p className="text-xs text-white/45 italic">
+                  &ldquo;{member.signatureGreeting}&rdquo;
+                </p>
+
+                {expertise.length > 0 && (
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.32em] font-[var(--font-label)] font-semibold text-white/45 mb-2">
+                      Knows their stuff
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {expertise.map((area) => (
+                        <span
+                          key={area}
+                          className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider font-[var(--font-label)]"
+                          style={{
+                            background: color.soft,
+                            color: color.hex,
+                            border: `1px solid ${color.soft}`,
+                          }}
+                        >
+                          {area}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Psych matrix */}
-              <section className="grid lg:grid-cols-[1fr_220px] gap-8 mb-8">
+              {/* How they're wired */}
+              <section className="grid lg:grid-cols-[1fr_220px] gap-8 mb-9">
                 <div>
                   <h3 className="text-lg font-bold font-[var(--font-headline)] text-white mb-1">
-                    Psychological matrix
+                    How they&rsquo;re wired
                   </h3>
                   <p className="text-xs text-white/45 mb-5">
-                    Drag to shape how {member.name} thinks and shows up.
+                    Drag to shape how {member.name} thinks and shows up for you.
                   </p>
                   <div className="space-y-5">
                     {TRAIT_ORDER.map((dim) => (
@@ -307,21 +327,22 @@ export default function ConfigPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="text-[10px] uppercase tracking-[0.22em] font-[var(--font-label)] font-semibold text-white/45">
+                  <h4 className="text-[11px] uppercase tracking-[0.32em] font-[var(--font-label)] font-semibold text-white/45">
                     Voice preview
                   </h4>
                   <VoicePreview memberId={activeId} config={config} />
-                  <p className="text-[11px] text-white/45 leading-snug">
-                    How {member.name} will likely sound — louder when extraverted, smoother when warm, more textured when curious.
+                  <p className="text-[11px] text-white/45 leading-relaxed">
+                    How {member.name} will likely sound — louder when outgoing,
+                    smoother when warm, more textured when curious.
                   </p>
                 </div>
               </section>
 
-              {/* Tones */}
-              <section className="mb-8">
+              {/* How they talk to you */}
+              <section className="mb-9">
                 <div className="flex items-baseline justify-between mb-3">
                   <h3 className="text-lg font-bold font-[var(--font-headline)] text-white">
-                    Tone preferences
+                    How they talk to you
                   </h3>
                   <span className="text-[11px] text-white/45 font-[var(--font-label)]">
                     Pick up to {MAX_TONES}
@@ -335,7 +356,8 @@ export default function ConfigPage() {
                         key={tone.id}
                         type="button"
                         onClick={() => toggleTone(tone.id)}
-                        className="px-4 py-2 rounded-full text-xs font-semibold inline-flex items-center gap-2 border transition-all"
+                        aria-pressed={active}
+                        className="px-4 py-2 rounded-full text-xs font-semibold inline-flex items-center gap-2 border transition-all hover:scale-[1.02]"
                         style={
                           active
                             ? {
@@ -345,7 +367,7 @@ export default function ConfigPage() {
                               }
                             : {
                                 background: "rgba(255,255,255,0.03)",
-                                borderColor: "rgba(255,255,255,0.08)",
+                                borderColor: "rgba(255,255,255,0.06)",
                                 color: "rgba(255,255,255,0.65)",
                               }
                         }
@@ -360,12 +382,15 @@ export default function ConfigPage() {
                 </div>
               </section>
 
-              {/* Boundaries */}
+              {/* House rules */}
               <section className="mb-8">
-                <h3 className="text-lg font-bold font-[var(--font-headline)] text-white mb-3">
-                  Boundaries
+                <h3 className="text-lg font-bold font-[var(--font-headline)] text-white mb-1">
+                  House rules
                 </h3>
-                <div className="space-y-2">
+                <p className="text-xs text-white/45 mb-4">
+                  Things {member.name} will always honour with you.
+                </p>
+                <div className="space-y-2.5">
                   {(
                     Object.entries(BOUNDARY_LABELS) as Array<[
                       Boundary,
@@ -385,12 +410,9 @@ export default function ConfigPage() {
               </section>
 
               {/* Footer */}
-              <footer className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-3 pt-6 border-t border-white/8">
+              <footer className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-3 pt-6 border-t border-white/[0.06]">
                 {statusMsg && (
-                  <p
-                    role="status"
-                    className="text-xs text-white/55 sm:mr-auto"
-                  >
+                  <p role="status" className="text-xs text-white/55 sm:mr-auto">
                     {statusMsg}
                   </p>
                 )}
@@ -404,7 +426,7 @@ export default function ConfigPage() {
                     </span>
                   }
                 >
-                  Reset to defaults
+                  Back to how they were
                 </AuroraButton>
                 <AuroraButton
                   variant="primary"
@@ -448,7 +470,7 @@ function BoundaryToggle({
       type="button"
       onClick={onToggle}
       aria-pressed={active}
-      className="w-full flex items-center gap-4 p-3 pl-4 rounded-2xl bg-white/[0.03] border border-white/8 hover:bg-white/[0.05] text-left transition-colors"
+      className="w-full flex items-center gap-4 p-3.5 pl-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] text-left transition-colors"
     >
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white">{label}</p>

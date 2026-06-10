@@ -253,6 +253,13 @@ export default function CouncilMember3D({
   const baseHeadEuler = useRef<THREE.Euler | null>(null);
   const baseSpineQuat = useRef<THREE.Quaternion | null>(null);
   const targetSpineQuat = useMemo(() => new THREE.Quaternion(), []);
+  const prevSpineQuat = useMemo(() => new THREE.Quaternion(), []);
+  // The clip metadata only changes with the animation props — don't rebuild
+  // the object on every frame for every member (GC churn in the hot path).
+  const clipMeta = useMemo(
+    () => resolveClip(animation, talkingVariant),
+    [animation, talkingVariant],
+  );
 
   useFrame((state) => {
     const head = bonesRef.current.head;
@@ -266,15 +273,19 @@ export default function CouncilMember3D({
       baseSpineQuat.current = spine.quaternion.clone();
     }
 
-    const meta = resolveClip(animation, talkingVariant);
+    const meta = clipMeta;
     const t = state.clock.elapsedTime;
 
-    // Spine: gentle look-at the target.
+    // Spine: lean toward the look target. The mixer rewrites this bone every
+    // frame, so the slerp factor is a NON-accumulating lean fraction — a
+    // constant is already frame-rate stable (dt-correcting it would make the
+    // lean vary with fps). 0.25 gives a clearly visible torso turn toward
+    // whoever is speaking, vs the old 0.08 which read as a faint incline.
     if (lookAt && spine && baseSpineQuat.current) {
-      const prev = spine.quaternion.clone();
+      prevSpineQuat.copy(spine.quaternion);
       spine.lookAt(lookAt);
       targetSpineQuat.copy(spine.quaternion);
-      spine.quaternion.copy(prev).slerp(targetSpineQuat, 0.08);
+      spine.quaternion.copy(prevSpineQuat).slerp(targetSpineQuat, 0.25);
     }
 
     // Head: follow target (e.g. camera) with subtle bob modulation.

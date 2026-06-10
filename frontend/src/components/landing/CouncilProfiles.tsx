@@ -71,9 +71,9 @@ const REACTION_BY_ID: Record<CouncilMemberId, CouncilMemberAnimation | null> = {
 };
 
 // Stage layout — wide spread so each character owns its own column of light.
-const LINE_SPACING = 2.4;
+const LINE_SPACING = 2.7;
 const LINE_Z = 3.4;
-const MEMBER_SCALE = 1.35;
+const MEMBER_SCALE = 1.6;
 const ACTIVE_LIFT_Y = 0.06;
 const ACTIVE_STEP_Z = 0.3;
 
@@ -405,7 +405,7 @@ export default function CouncilProfiles() {
   return (
     <section id="about" className="relative py-32 px-6 max-w-7xl mx-auto">
       <SectionHeader
-        kicker="The Council"
+        kicker="05 · Meet them properly"
         title={
           <>
             Five minds. <span className="aurora-text">One table.</span>
@@ -425,7 +425,7 @@ export default function CouncilProfiles() {
           }}
         />
 
-        <div className="relative h-[480px] md:h-[560px] lg:h-[620px] rounded-[2rem] overflow-hidden border border-white/[0.07]">
+        <div className="relative h-[520px] md:h-[600px] lg:h-[660px] rounded-[2rem] overflow-hidden border border-white/[0.07]">
           <div
             aria-hidden
             className="absolute inset-0"
@@ -440,7 +440,7 @@ export default function CouncilProfiles() {
           <GatedCanvas
             interactive
             className="absolute inset-0"
-            camera={{ position: [0, 1.55, 15], fov: 50 }}
+            camera={{ position: [0, 1.7, 12], fov: 42 }}
           >
             <CouncilLineup
               activeIndex={activeIndex}

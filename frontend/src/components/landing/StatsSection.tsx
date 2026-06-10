@@ -53,6 +53,17 @@ export default function StatsSection() {
       className="relative py-24 px-6 border-y border-white/[0.04]"
     >
       <div className="max-w-7xl mx-auto">
+        {/* Chapter kicker — continues the page's numbered narrative. */}
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-14 text-center text-[11px] font-[var(--font-label)] font-semibold uppercase tracking-[0.32em] text-white/55"
+        >
+          09 · The receipts
+        </motion.p>
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-12 gap-x-4 relative">
           {STATS.map(({ value, suffix, label, icon, member }, i) => {
             const c = councilColors[member];

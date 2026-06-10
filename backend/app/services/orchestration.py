@@ -5,12 +5,27 @@ This is *not* an LLM call — it's a fast, deterministic heuristic that picks
 1-3 members so the user gets a varied, conversation-like reply pattern.
 
 Rules of thumb:
-- Direct address ("@Aria", "Aria, what do you think?") → that member only.
+- Explicit target / direct address ("@Aria", "Aria, what do you think?") →
+  that member only. These are the ONLY two paths that return a single voice —
+  the user asked one friend a question, so one friend answers.
 - Emotional content → Echo first, often Nova or Sage as second voice.
 - Decision/analysis → Aria + Sage (with Rex if the user is hedging).
-- Provocation / "I think I should" → Rex.
+- Provocation / "I think I should" → Rex, plus at least one more voice.
 - Brainstorm / creativity → Nova first, Aria second.
-- Default → 2 members, weighted to vary across recent turns.
+- Default → 2-3 members, weighted to vary across recent turns.
+- Group guarantee: every non-targeted, non-mention path returns AT LEAST 2
+  members (topped up with whoever has spoken least recently), capped at 3.
+
+Examples (empty history, all 5 members available):
+
+    >>> choose_responders("be honest with me")   # provocative → rex + a 2nd voice
+    ['rex', 'aria']
+    >>> choose_responders("hey")                 # default → never a lone voice
+    ['aria', 'nova', 'rex']
+    >>> choose_responders("@Aria thoughts?")     # direct mention stays 1:1
+    ['aria']
+    >>> choose_responders("hi", target_member_id="sage")  # explicit target stays 1:1
+    ['sage']
 """
 from __future__ import annotations
 
@@ -181,7 +196,7 @@ def choose_responders(
             chosen.append(_least_recent(feelers, history))
         # Occasionally throw Rex in for spice if recent turns have been quiet.
         recent_counts = _recent_speaker_counts(history, n=8)
-        if provocateurs and recent_counts.get("rex", 0) == 0 and len(chosen) < 2:
+        if provocateurs and recent_counts.get("rex", 0) == 0 and len(chosen) < 3:
             chosen.append("rex")
 
     # 6. De-dup preserving order.
@@ -192,9 +207,16 @@ def choose_responders(
             out.append(m)
             seen.add(m)
 
-    # 7. Ensure at least one responder.
-    if not out and available:
-        out = [available[0]]
+    # 7. Group guarantee: outside the two 1:1 cases (explicit target, direct
+    #    mention — both returned earlier), the council always answers as a
+    #    group. Top up to at least 2 voices with whoever has spoken least
+    #    recently, keeping the cap at 3.
+    remaining = [m for m in COUNCIL_ORDER if m in available_set and m not in seen]
+    while len(out) < 2 and remaining:
+        pick = _least_recent(remaining, history)
+        out.append(pick)
+        seen.add(pick)
+        remaining.remove(pick)
 
     return out[:3]
 

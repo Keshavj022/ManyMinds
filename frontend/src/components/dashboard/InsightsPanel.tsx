@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import GlassCard from "@/components/ui/GlassCard";
+import AuroraButton from "@/components/ui/AuroraButton";
 import MemberChip from "@/components/ui/MemberChip";
 import { CouncilMemberId, councilColors } from "@/lib/design-tokens";
 import { useUserActivity } from "@/lib/use-user-activity";
@@ -18,9 +18,9 @@ interface Insight {
 }
 
 const KIND_LABEL: Record<Insight["kind"], string> = {
-  debate: "Debate Conclusion",
-  memory: "Memory Edge",
-  moment: "Moment Flagged",
+  debate: "Where we landed",
+  memory: "New thread",
+  moment: "Kept moment",
 };
 
 // Sample insights — only ever shown once a user has actual sessions. New
@@ -30,7 +30,7 @@ const INSIGHTS: ReadonlyArray<Insight> = [
     kind: "debate",
     title: "Move-first beats pivot-later",
     body:
-      "After 22 turns, the council landed on shipping the smallest version this week. Aria documented the trade-offs and tagged the open questions for next session.",
+      "After 22 turns, we landed on shipping the smallest version this week. Aria wrote down the trade-offs and tagged the open questions for next time.",
     surfaced: "aria",
     surfacedName: "Aria",
     surfacedRole: "Analyst",
@@ -40,7 +40,7 @@ const INSIGHTS: ReadonlyArray<Insight> = [
     kind: "memory",
     title: "Decentralization ↔ peer-to-peer architectures",
     body:
-      "Sage connected your fresh thoughts on decentralized systems to a thread you opened last month about peer-to-peer data. The graph picked up a new edge with weight 0.82.",
+      "Sage connected your fresh thoughts on decentralized systems to a thread you opened last month about peer-to-peer data. A new line on the wall.",
     surfaced: "sage",
     surfacedName: "Sage",
     surfacedRole: "Architect",
@@ -50,7 +50,7 @@ const INSIGHTS: ReadonlyArray<Insight> = [
     kind: "moment",
     title: "Something landed differently last Tuesday",
     body:
-      "Echo flagged a shift in tone halfway through your evening session — softer, more reflective. She's marked it as a check-in opportunity next time we talk.",
+      "Echo caught a shift in tone halfway through your evening session — softer, more reflective. She wants to check in on it next time you talk.",
     surfaced: "echo",
     surfacedName: "Echo",
     surfacedRole: "Empath",
@@ -62,22 +62,22 @@ export default function InsightsPanel() {
   const { ready, hasSessions } = useUserActivity();
 
   return (
-    <GlassCard variant="default" className="rounded-3xl p-6">
-      <header className="flex items-center justify-between mb-5">
-        <div>
+    <div className="glass rounded-3xl p-7">
+      <header className="flex items-center justify-between gap-4 mb-6">
+        <div className="space-y-1">
           <h2 className="text-lg font-bold font-[var(--font-headline)] text-white">
-            Recent insights
+            Since last time
           </h2>
-          <p className="text-xs text-white/45 mt-0.5">
-            What the council surfaced for you since last time.
+          <p className="text-xs text-white/45">
+            Things we kept for you — decisions, threads, moments.
           </p>
         </div>
         {hasSessions && (
           <Link
             href="/memory"
-            className="text-xs font-semibold text-white/55 hover:text-white transition-colors inline-flex items-center gap-1"
+            className="text-xs font-semibold text-white/55 hover:text-white transition-colors inline-flex items-center gap-1 shrink-0"
           >
-            View graph
+            See the wall
             <span className="material-symbols-outlined text-[16px]">
               arrow_forward
             </span>
@@ -90,7 +90,7 @@ export default function InsightsPanel() {
       {!ready ? (
         <div className="h-32" aria-hidden />
       ) : hasSessions ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {INSIGHTS.map((insight, i) => (
             <InsightCard key={insight.title} insight={insight} index={i} />
           ))}
@@ -98,7 +98,7 @@ export default function InsightsPanel() {
       ) : (
         <EmptyState />
       )}
-    </GlassCard>
+    </div>
   );
 }
 
@@ -107,38 +107,40 @@ function EmptyState() {
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45 }}
-      className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-7 flex flex-col items-center text-center gap-4"
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.02] p-8 flex flex-col items-center text-center gap-5"
     >
       <span
         className="w-12 h-12 rounded-full flex items-center justify-center"
         style={{
           background:
-            "linear-gradient(135deg, rgba(155,135,216,0.18), rgba(216,163,184,0.14))",
+            "linear-gradient(135deg, rgba(155,135,216,0.18), rgba(224,176,131,0.12))",
         }}
       >
         <span className="material-symbols-outlined text-white/75 text-[26px]">
           hub
         </span>
       </span>
-      <div className="max-w-sm">
-        <h3 className="text-base font-semibold text-white mb-1.5">
-          Nothing surfaced yet.
+      <div className="max-w-sm space-y-1.5">
+        <h3 className="text-base font-semibold text-white">
+          Nothing kept yet — and that&apos;s honest.
         </h3>
         <p className="text-sm text-white/55 leading-relaxed">
-          Start a conversation and the council will begin noting what matters —
-          decisions made, themes that recur, moments worth coming back to.
+          Talk to us once and we&apos;ll start holding onto the good stuff:
+          decisions you made, themes that repeat, moments worth coming back to.
         </p>
       </div>
-      <Link
+      <AuroraButton
         href="/chat"
-        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-strong)] text-[#15121d] text-xs font-semibold transition-colors active:scale-[0.98]"
+        size="sm"
+        iconRight={
+          <span className="material-symbols-outlined text-[15px]">
+            arrow_forward
+          </span>
+        }
       >
-        Start a chat
-        <span className="material-symbols-outlined text-[15px]">
-          arrow_forward
-        </span>
-      </Link>
+        Start talking
+      </AuroraButton>
     </motion.div>
   );
 }
@@ -149,8 +151,8 @@ function InsightCard({ insight, index }: { insight: Insight; index: number }) {
     <motion.article
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.05 + index * 0.05, duration: 0.4 }}
-      className="group relative p-4 rounded-2xl bg-white/[0.03] border border-white/8 overflow-hidden transition-colors hover:bg-white/[0.05]"
+      transition={{ delay: 0.05 + index * 0.06, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="group relative p-5 rounded-2xl bg-white/[0.03] overflow-hidden transition-colors duration-300 hover:bg-white/[0.05]"
     >
       <span
         aria-hidden
@@ -160,9 +162,9 @@ function InsightCard({ insight, index }: { insight: Insight; index: number }) {
         }}
       />
       <div className="relative z-10">
-        <div className="flex items-center justify-between mb-2 gap-3">
+        <div className="flex items-center justify-between mb-2.5 gap-3">
           <span
-            className="text-[10px] font-bold uppercase tracking-wider font-[var(--font-label)] px-2 py-0.5 rounded-md"
+            className="text-[10px] font-bold uppercase tracking-wider font-[var(--font-label)] px-2.5 py-1 rounded-full"
             style={{
               background: color.soft,
               color: color.hex,

@@ -2,10 +2,14 @@
 
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { COUNCIL_MEMBERS, councilColors } from "@/lib/design-tokens";
+import { useEffect, useRef, useState } from "react";
+import { COUNCIL_MEMBERS } from "@/lib/design-tokens";
+import MemberAvatar from "@/components/ui/MemberAvatar";
 import { resolveActiveNav } from "./nav-config";
 import { useEnvironment } from "./EnvironmentProvider";
+
+/** Amber "candle-light" accent for active states (matches --color-warm). */
+const WARM = "#e0b083";
 
 interface HeaderProps {
   /** Mobile-only: opens the drawer Sidebar. */
@@ -22,7 +26,13 @@ export default function Header({ onMenuOpen }: HeaderProps) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 h-20 px-4 sm:px-6 lg:px-8 flex items-center gap-4 glass-strong border-b border-white/8">
+    <header
+      className="sticky top-0 z-30 h-16 lg:h-20 px-4 sm:px-6 lg:px-10 flex items-center gap-3 backdrop-blur-xl"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(19,16,23,0.85) 0%, rgba(19,16,23,0.4) 100%)",
+      }}
+    >
       {/* Mobile menu trigger */}
       <button
         type="button"
@@ -34,7 +44,7 @@ export default function Header({ onMenuOpen }: HeaderProps) {
       </button>
 
       {/* Title block */}
-      <div className="min-w-0 flex-1 lg:flex-initial">
+      <div className="min-w-0 flex-1">
         <h1 className="text-lg sm:text-xl font-bold text-white font-[var(--font-headline)] tracking-tight truncate">
           {active.name}
         </h1>
@@ -43,22 +53,22 @@ export default function Header({ onMenuOpen }: HeaderProps) {
         </p>
       </div>
 
-      {/* Mood widget — center, md+ */}
-      <div className="hidden md:flex flex-1 justify-center">
-        <CouncilMoodWidget />
-      </div>
-
-      {/* Right-side actions */}
-      <div className="flex items-center gap-2 ml-auto md:ml-0">
+      {/* Right-side: where you are + who's here */}
+      <div className="flex items-center gap-3">
         <EnvironmentSwitcher />
-        <IconButton icon="search" label="Search" hideOnMobile />
-        <IconButton
-          icon="notifications"
-          label="Notifications"
-          badge
-          hideOnMobile
-        />
-        <IconButton icon="person_add" label="Invite a friend" />
+        {/* On small screens the sidebar (and its room dots) are hidden,
+            so the council peeks in here instead. */}
+        <div className="lg:hidden flex -space-x-2" aria-hidden>
+          {COUNCIL_MEMBERS.slice(0, 3).map((member, i) => (
+            <span
+              key={member.id}
+              className="animate-pulse-soft inline-flex rounded-full ring-2 ring-[#131017]"
+              style={{ animationDelay: `${i * 0.8}s` }}
+            >
+              <MemberAvatar id={member.id} size="xs" glow={false} />
+            </span>
+          ))}
+        </div>
       </div>
     </header>
   );
@@ -72,139 +82,6 @@ function formatToday(): string {
   const day = d.getDate();
   const weekday = d.toLocaleString("en-US", { weekday: "long" });
   return `${weekday}, ${month} ${day}`;
-}
-
-function IconButton({
-  icon,
-  label,
-  badge = false,
-  hideOnMobile = false,
-  onClick,
-}: {
-  icon: string;
-  label: string;
-  badge?: boolean;
-  hideOnMobile?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      className={`relative w-10 h-10 rounded-full bg-white/[0.04] border border-white/8 grid place-items-center text-white/65 hover:text-white hover:bg-white/[0.08] transition-colors ${
-        hideOnMobile ? "hidden sm:grid" : ""
-      }`}
-    >
-      <span className="material-symbols-outlined text-[20px]">{icon}</span>
-      {badge && (
-        <span
-          className="absolute top-2 right-2 w-2 h-2 rounded-full"
-          style={{
-            background: councilColors.nova.hex,
-            boxShadow: `0 0 8px ${councilColors.nova.hex}`,
-          }}
-        />
-      )}
-    </button>
-  );
-}
-
-/* ---------------------------- Council Mood widget --------------------------- */
-
-/**
- * Pseudo-random but DETERMINISTIC mood values (so they don't reflow on every
- * render). useMemo + a stable seed per id keeps the bars consistent for the
- * session. Eventually this becomes a real signal from the backend.
- */
-function CouncilMoodWidget() {
-  const moods = useMemo(() => {
-    return COUNCIL_MEMBERS.map((m) => ({
-      id: m.id,
-      name: m.name,
-      role: m.role,
-      energy: seededEnergy(m.id),
-      // textual flavour reflecting the energy band
-      label: energyLabel(seededEnergy(m.id)),
-    }));
-  }, []);
-
-  return (
-    <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/8">
-      <span className="text-[10px] uppercase tracking-[0.22em] text-white/40 font-[var(--font-label)] font-semibold">
-        Mood
-      </span>
-      <div className="flex items-end gap-1.5 h-6">
-        {moods.map((mood) => (
-          <MoodBar key={mood.id} mood={mood} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function MoodBar({
-  mood,
-}: {
-  mood: { id: keyof typeof councilColors; name: string; role: string; energy: number; label: string };
-}) {
-  const [hover, setHover] = useState(false);
-  const c = councilColors[mood.id];
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
-      <motion.div
-        initial={{ height: 4 }}
-        animate={{ height: 6 + mood.energy * 18 }}
-        transition={{
-          delay: 0.2,
-          duration: 0.6,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-        className="w-1.5 rounded-full"
-        style={{
-          background: `linear-gradient(180deg, ${c.hex}, ${c.hex}80)`,
-          boxShadow: `0 0 6px ${c.soft}`,
-        }}
-      />
-      <AnimatePresence>
-        {hover && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap pointer-events-none"
-          >
-            <div className="glass-strong rounded-lg px-2.5 py-1.5 text-[11px]">
-              <span className="font-bold" style={{ color: c.hex }}>
-                {mood.name}
-              </span>{" "}
-              <span className="text-white/65">{mood.label}</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function seededEnergy(seed: string): number {
-  // Cheap, deterministic hash → [0.3, 1.0]
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
-  const n = Math.abs(Math.sin(h)) * 1.7;
-  return 0.3 + (n % 1) * 0.7;
-}
-
-function energyLabel(e: number): string {
-  if (e > 0.85) return "is buzzing";
-  if (e > 0.65) return "feels engaged";
-  if (e > 0.45) return "is listening";
-  return "is resting";
 }
 
 /* --------------------------- Environment switcher --------------------------- */
@@ -228,13 +105,13 @@ function EnvironmentSwitcher() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="h-10 px-3 sm:px-4 rounded-full bg-white/[0.04] border border-white/8 hover:bg-white/[0.08] flex items-center gap-2 text-sm text-white/85 transition-colors"
+        className="h-10 px-3 sm:px-4 rounded-full bg-white/[0.04] border border-white/[0.06] hover:bg-[rgba(224,176,131,0.07)] flex items-center gap-2 text-sm text-white/85 transition-colors"
         aria-haspopup="menu"
         aria-expanded={open}
       >
         <span
           className="material-symbols-outlined text-[18px]"
-          style={{ color: "rgba(255,255,255,0.7)" }}
+          style={{ color: WARM }}
         >
           {current.icon}
         </span>
@@ -269,16 +146,14 @@ function EnvironmentSwitcher() {
                   }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
                     isActive
-                      ? "bg-white/[0.07]"
+                      ? "bg-[rgba(224,176,131,0.08)]"
                       : "hover:bg-white/[0.05]"
                   }`}
                 >
                   <span
                     className="material-symbols-outlined text-[20px]"
                     style={{
-                      color: isActive
-                        ? councilColors.nova.hex
-                        : "rgba(255,255,255,0.7)",
+                      color: isActive ? WARM : "rgba(255,255,255,0.7)",
                     }}
                   >
                     {env.icon}
@@ -294,7 +169,7 @@ function EnvironmentSwitcher() {
                   {isActive && (
                     <span
                       className="material-symbols-outlined text-[16px]"
-                      style={{ color: councilColors.nova.hex }}
+                      style={{ color: WARM }}
                     >
                       check
                     </span>

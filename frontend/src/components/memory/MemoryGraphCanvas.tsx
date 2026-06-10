@@ -1,80 +1,67 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { councilColors, CouncilMemberId } from "@/lib/design-tokens";
 import {
-  GRAPH_EDGES,
-  GRAPH_NODES,
-  GraphNode,
-  NodeCategory,
+  KIND_META,
+  LayoutEdge,
+  LayoutNode,
+  NodeKind,
+  YOU_NODE_ID,
 } from "./graph-data";
 
 interface Props {
-  activeCategories: ReadonlyArray<NodeCategory>;
-  selectedId: string;
+  nodes: ReadonlyArray<LayoutNode>;
+  edges: ReadonlyArray<LayoutEdge>;
+  selectedId: string | null;
+  hoveredId: string | null;
   onSelect: (id: string) => void;
-  /** Pan / zoom controlled by parent so the bottom-left controls can drive it. */
+  onHover: (id: string | null) => void;
+  /** Pan / zoom controlled by the parent so the corner controls can drive it. */
   zoom: number;
   centerOn: { x: number; y: number };
 }
 
+const ALL_KINDS = Object.keys(KIND_META) as NodeKind[];
+
 export default function MemoryGraphCanvas({
-  activeCategories,
+  nodes,
+  edges,
   selectedId,
+  hoveredId,
   onSelect,
+  onHover,
   zoom,
   centerOn,
 }: Props) {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-
-  // Filter nodes by category
-  const visibleNodes = useMemo(() => {
-    return GRAPH_NODES.filter((n) => activeCategories.includes(n.category));
-  }, [activeCategories]);
-
-  const visibleNodeIds = useMemo(
-    () => new Set(visibleNodes.map((n) => n.id)),
-    [visibleNodes],
-  );
-
-  // Drop edges that point to filtered-out / unknown nodes
-  const visibleEdges = useMemo(() => {
-    return GRAPH_EDGES.filter(
-      (e) =>
-        e.weight > 0 &&
-        visibleNodeIds.has(e.from) &&
-        visibleNodeIds.has(e.to),
-    );
-  }, [visibleNodeIds]);
-
-  // Map id → node for fast lookup
-  const nodesById = useMemo(() => {
-    const m = new Map<string, GraphNode>();
-    for (const n of visibleNodes) m.set(n.id, n);
-    return m;
-  }, [visibleNodes]);
-
-  // Which edges connect to the highlighted node (selected ?? hovered)
   const focusId = hoveredId ?? selectedId;
-  const focusedEdges = useMemo(() => {
-    return new Set(
-      visibleEdges
-        .filter((e) => e.from === focusId || e.to === focusId)
-        .map((e) => `${e.from}-${e.to}`),
-    );
-  }, [visibleEdges, focusId]);
 
-  const neighbourIds = useMemo(() => {
-    const set = new Set<string>();
-    for (const e of visibleEdges) {
-      if (e.from === focusId) set.add(e.to);
-      if (e.to === focusId) set.add(e.from);
+  const nodesById = useMemo(() => {
+    const m = new Map<string, LayoutNode>();
+    for (const n of nodes) m.set(n.id, n);
+    return m;
+  }, [nodes]);
+
+  // Edges touching the focused node + its neighbour set.
+  const { focusedEdgeKeys, neighbourIds } = useMemo(() => {
+    const keys = new Set<string>();
+    const ids = new Set<string>();
+    if (focusId) {
+      for (const e of edges) {
+        if (e.source === focusId || e.target === focusId) {
+          keys.add(`${e.source}→${e.target}`);
+          ids.add(e.source === focusId ? e.target : e.source);
+        }
+      }
     }
-    return set;
-  }, [visibleEdges, focusId]);
+    return { focusedEdgeKeys: keys, neighbourIds: ids };
+  }, [edges, focusId]);
 
-  // viewBox controls zoom and pan
+  const focusHex = focusId
+    ? KIND_META[nodesById.get(focusId)?.kind ?? "entity"].hex
+    : "#ffffff";
+
+  // viewBox drives zoom and pan.
   const half = 50 / zoom;
   const viewBox = `${centerOn.x - half} ${centerOn.y - half} ${half * 2} ${half * 2}`;
 
@@ -83,32 +70,28 @@ export default function MemoryGraphCanvas({
       viewBox={viewBox}
       className="absolute inset-0 w-full h-full"
       preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label="Your memory graph"
     >
-      {/* Defs: gradients per member, edge-pulse filter */}
       <defs>
-        {Object.entries(councilColors).map(([id, c]) => (
-          <radialGradient
-            id={`node-${id}`}
-            key={id}
-            cx="35%"
-            cy="35%"
-            r="70%"
-          >
-            <stop offset="0%" stopColor="white" stopOpacity="0.95" />
-            <stop offset="35%" stopColor={c.hex} stopOpacity="1" />
-            <stop offset="100%" stopColor={c.hex} stopOpacity="0.5" />
+        {ALL_KINDS.map((kind) => (
+          <radialGradient key={kind} id={`mg-${kind}`} cx="35%" cy="35%" r="70%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+            <stop offset="38%" stopColor={KIND_META[kind].hex} stopOpacity="1" />
+            <stop offset="100%" stopColor={KIND_META[kind].hex} stopOpacity="0.45" />
           </radialGradient>
         ))}
       </defs>
 
-      {/* Edges */}
+      {/* Edges — faint by default, lit in the focused node's hue */}
       <g>
-        {visibleEdges.map((edge) => {
-          const a = nodesById.get(edge.from);
-          const b = nodesById.get(edge.to);
+        {edges.map((edge) => {
+          const a = nodesById.get(edge.source);
+          const b = nodesById.get(edge.target);
           if (!a || !b) return null;
-          const key = `${edge.from}-${edge.to}`;
-          const isFocused = focusedEdges.has(key);
+          const key = `${edge.source}→${edge.target}`;
+          const isFocused = focusedEdgeKeys.has(key);
+          const idleOpacity = edge.anchor ? 0.05 : 0.1 + edge.weight * 0.16;
           return (
             <line
               key={key}
@@ -116,10 +99,10 @@ export default function MemoryGraphCanvas({
               y1={a.y}
               x2={b.x}
               y2={b.y}
-              stroke="white"
-              strokeOpacity={isFocused ? 0.55 : 0.12 + edge.weight * 0.18}
-              strokeWidth={isFocused ? 0.42 : 0.22}
-              className={isFocused ? "edge-focused" : "edge-idle"}
+              stroke={isFocused ? focusHex : "white"}
+              strokeOpacity={isFocused ? 0.6 : idleOpacity}
+              strokeWidth={isFocused ? 0.42 : edge.anchor ? 0.16 : 0.22}
+              className={isFocused ? "edge-focused" : undefined}
             />
           );
         })}
@@ -127,27 +110,26 @@ export default function MemoryGraphCanvas({
 
       {/* Nodes */}
       <g>
-        {visibleNodes.map((node) => {
+        {nodes.map((node, i) => {
           const isFocused = focusId === node.id;
           const isNeighbour = neighbourIds.has(node.id);
-          const isSelected = selectedId === node.id;
-          const dim = focusId && !isFocused && !isNeighbour ? 0.35 : 1;
-
+          const dim = focusId && !isFocused && !isNeighbour ? 0.3 : 1;
           return (
             <NodeBubble
               key={node.id}
               node={node}
+              order={i}
               dim={dim}
               isFocused={isFocused}
-              isSelected={isSelected}
-              onHover={(h) => setHoveredId(h ? node.id : null)}
+              isSelected={selectedId === node.id}
+              onHover={(h) => onHover(h ? node.id : null)}
               onSelect={() => onSelect(node.id)}
             />
           );
         })}
       </g>
 
-      {/* Tiny inline keyframe for edge pulse */}
+      {/* Edge pulse keyframes (scoped to this SVG) */}
       <style>{`
         .edge-focused {
           stroke-dasharray: 1 1.6;
@@ -157,6 +139,9 @@ export default function MemoryGraphCanvas({
           0% { stroke-dashoffset: 0; }
           100% { stroke-dashoffset: -5.2; }
         }
+        @media (prefers-reduced-motion: reduce) {
+          .edge-focused { animation: none; }
+        }
       `}</style>
     </svg>
   );
@@ -164,81 +149,106 @@ export default function MemoryGraphCanvas({
 
 function NodeBubble({
   node,
+  order,
   dim,
   isFocused,
   isSelected,
   onHover,
   onSelect,
 }: {
-  node: GraphNode;
+  node: LayoutNode;
+  order: number;
   dim: number;
   isFocused: boolean;
   isSelected: boolean;
   onHover: (h: boolean) => void;
   onSelect: () => void;
 }) {
-  const champion: CouncilMemberId = node.champion;
-  const color = councilColors[champion];
+  const meta = KIND_META[node.kind];
+  const isYou = node.id === YOU_NODE_ID;
+  const label =
+    node.label.length > 18 ? `${node.label.slice(0, 17)}…` : node.label;
 
   return (
     <motion.g
-      style={{ cursor: "pointer", opacity: dim }}
+      // Outer layer: staggered entrance only. The hover-dim lives on the
+      // inner <g> as a plain CSS transition so it never inherits the delay.
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.45, delay: Math.min(order * 0.03, 0.6) }}
+    >
+    <g
+      style={{ cursor: "pointer", opacity: dim, transition: "opacity 0.25s ease" }}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
       onClick={onSelect}
-      initial={{ scale: 0.5, opacity: 0 }}
-      animate={{ scale: 1, opacity: dim }}
-      transition={{ duration: 0.4 }}
     >
-      {/* Glow */}
-      <circle
-        cx={node.x}
-        cy={node.y}
-        r={node.radius * (isFocused ? 2.2 : 1.6)}
-        fill={color.hex}
-        opacity={isFocused ? 0.45 : 0.18}
-        style={{ pointerEvents: "none" }}
-      />
+      {/* Glow halo — breathes softly on the You node */}
+      {isYou ? (
+        <motion.circle
+          cx={node.x}
+          cy={node.y}
+          r={node.radius * (isFocused ? 2.3 : 1.9)}
+          fill={meta.hex}
+          style={{ pointerEvents: "none" }}
+          animate={{ opacity: [0.16, 0.32, 0.16] }}
+          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+        />
+      ) : (
+        <circle
+          cx={node.x}
+          cy={node.y}
+          r={node.radius * (isFocused ? 2.2 : 1.6)}
+          fill={meta.hex}
+          opacity={isFocused ? 0.42 : 0.15}
+          style={{ pointerEvents: "none" }}
+        />
+      )}
+
       {/* Selection ring */}
       {isSelected && (
         <circle
           cx={node.x}
           cy={node.y}
-          r={node.radius + 1.5}
+          r={node.radius + 1.4}
           fill="none"
           stroke="white"
-          strokeOpacity={0.8}
-          strokeWidth={0.5}
+          strokeOpacity={0.75}
+          strokeWidth={0.4}
         />
       )}
+
       {/* Core */}
       <circle
         cx={node.x}
         cy={node.y}
         r={node.radius}
-        fill={`url(#node-${champion})`}
-        stroke="rgba(255,255,255,0.18)"
-        strokeWidth={0.25}
+        fill={`url(#mg-${node.kind})`}
+        stroke="rgba(255,255,255,0.16)"
+        strokeWidth={0.22}
       />
+
       {/* Label */}
       <text
         x={node.x}
-        y={node.y + node.radius + 3}
+        y={node.y + node.radius + 2.8}
         textAnchor="middle"
-        fontSize={isFocused ? 2.8 : 2.4}
-        fontWeight={isFocused ? 700 : 500}
+        fontSize={isFocused ? 2.7 : 2.3}
+        fontWeight={isFocused || isYou ? 700 : 500}
         fill="white"
+        fillOpacity={isFocused || isYou ? 1 : 0.82}
         style={{
           fontFamily: "var(--font-headline), sans-serif",
           paintOrder: "stroke",
-          stroke: "rgba(8,7,13,0.85)",
+          stroke: "rgba(15,13,20,0.85)",
           strokeWidth: 0.6,
           strokeLinejoin: "round",
           pointerEvents: "none",
         }}
       >
-        {node.label}
+        {label}
       </text>
+    </g>
     </motion.g>
   );
 }

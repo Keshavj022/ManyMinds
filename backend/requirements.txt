@@ -15,6 +15,7 @@ aiosmtplib==3.0.2   # async SMTP — used by app/services/email_provider.py
 # Async SDK; loaded by app/core/database.py. App falls into stub-mode
 # automatically when COSMOS_ENDPOINT / COSMOS_KEY are unset.
 azure-cosmos==4.7.0
+aiohttp==3.11.11    # required by azure.cosmos.aio's async transport
 
 # ---- Azure AI services
 # Each is lazy-loaded by its own service wrapper and stub-falls-back

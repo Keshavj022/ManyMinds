@@ -1,13 +1,16 @@
 /**
  * ManyMinds — Onboarding data + scoring
  *
- * The Big Five quiz is intentionally NOT clinical. Each question is a tiny
- * everyday scenario a friend would actually ask, scored on a 0-100 slider.
- * Some items are reverse-coded to counter acquiescence bias.
+ * Onboarding is a conversation, not a form. The council takes turns asking —
+ * demographics flow like a group chat, and the Big Five quiz is a deck of 20
+ * "is this you?" cards answered on a 1-5 scale from "not me" to "very me".
  *
- * Scoring strategy:
- *  - For each dimension, average the (possibly reversed) item values.
- *  - Reverse-coded items are flipped: 100 - value.
+ * Scoring:
+ *  - Each dimension has 4 items; some are reverse-coded to counter
+ *    acquiescence bias.
+ *  - Local scores are 0-100 per dimension (average of normalized items).
+ *  - The backend receives plain 1-5 Likert responses with reverse-coding
+ *    already applied, so it can score raw averages.
  */
 import type { CouncilMemberId } from "@/lib/design-tokens";
 
@@ -18,17 +21,6 @@ export type BigFiveDimension =
   | "agreeableness"
   | "neuroticism";
 
-export interface Question {
-  id: string;
-  dimension: BigFiveDimension;
-  prompt: string;
-  leftLabel: string;
-  rightLabel: string;
-  reverse?: boolean;
-  vibeColor: CouncilMemberId;
-  reaction?: string;
-}
-
 export interface BigFiveScores {
   openness: number;
   conscientiousness: number;
@@ -38,224 +30,185 @@ export interface BigFiveScores {
 }
 
 // ---------------------------------------------------------------------------
-// Question bank — 20 items, 4 per dimension, vibe distributed across council
+// Quiz — 20 cards, 4 per dimension, each asked by a member in their voice.
+// Answered on a 1-5 orb scale: 1 = "not me", 5 = "very me".
 // ---------------------------------------------------------------------------
+export interface Question {
+  id: string;
+  dimension: BigFiveDimension;
+  /** Which member asks this one. */
+  member: CouncilMemberId;
+  prompt: string;
+  /** When true, "very me" counts AGAINST the dimension. */
+  reverse?: boolean;
+}
+
 export const BIG_FIVE_QUESTIONS: ReadonlyArray<Question> = [
   // ───────── Openness ─────────
   {
     id: "o1",
     dimension: "openness",
+    member: "nova",
     prompt:
-      "It's Friday night. You're choosing between a museum opening with new ideas vs your favorite restaurant for the fifth time.",
-    leftLabel: "Restaurant. Always.",
-    rightLabel: "Museum. New things.",
-    vibeColor: "nova",
-    reaction: "Oooh — I love that you're up for adventure.",
+      "You're the one in the group who says \"okay, but what if we tried it a completely different way?\"",
   },
   {
     id: "o2",
     dimension: "openness",
+    member: "sage",
     prompt:
-      "Someone hands you a poetry book about a topic you know nothing about. You...",
-    leftLabel: "Quietly put it down",
-    rightLabel: "Open page one",
-    vibeColor: "sage",
-    reaction: "Curiosity is the foundation of everything good.",
+      "A topic you know nothing about comes up — and you lean in instead of out.",
   },
   {
     id: "o3",
     dimension: "openness",
+    member: "aria",
     prompt:
-      "You're more drawn to conversations about practical, tangible things than abstract 'what if' ideas.",
-    leftLabel: "What ifs all night",
-    rightLabel: "Keep it grounded",
+      "Honestly? You'd rather keep things practical than wander off into big abstract what-ifs.",
     reverse: true,
-    vibeColor: "aria",
-    reaction: "Got it — you want both, but reality first.",
   },
   {
     id: "o4",
     dimension: "openness",
+    member: "rex",
     prompt:
-      "A friend wants to take you somewhere they refuse to describe. You go in blind.",
-    leftLabel: "Tell me everything",
-    rightLabel: "Mystery? Yes please",
-    vibeColor: "rex",
-    reaction: "Living dangerously. I respect it.",
+      "A friend says \"don't ask questions, just come\" — and you're already putting your shoes on.",
   },
 
   // ───────── Conscientiousness ─────────
   {
     id: "c1",
     dimension: "conscientiousness",
-    prompt: "There's a deadline next Tuesday. When do you start?",
-    leftLabel: "Monday night",
-    rightLabel: "Today, obviously",
-    vibeColor: "aria",
-    reaction: "Noted — your past self respects your future self.",
+    member: "aria",
+    prompt:
+      "Deadline next Tuesday. Some quiet part of you has already started.",
   },
   {
     id: "c2",
     dimension: "conscientiousness",
-    prompt: "Your desk right now is...",
-    leftLabel: "Creatively chaotic",
-    rightLabel: "Suspiciously tidy",
-    vibeColor: "sage",
-    reaction: "Order tells me how you think.",
+    member: "sage",
+    prompt: "Your space stays tidy because a tidy room is a tidy head.",
   },
   {
     id: "c3",
     dimension: "conscientiousness",
+    member: "nova",
     prompt:
-      "Plans are a vibe-killer. You'd rather see what the day brings than schedule it out.",
-    leftLabel: "Calendar everything",
-    rightLabel: "Let the day breathe",
+      "Plans feel a little like a cage — you'd rather see where the day takes you.",
     reverse: true,
-    vibeColor: "nova",
-    reaction: "Spontaneity has its own kind of structure.",
   },
   {
     id: "c4",
     dimension: "conscientiousness",
+    member: "echo",
     prompt:
-      "A new hobby. Do you finish the tutorial, or jump in and figure it out as you go?",
-    leftLabel: "Just start",
-    rightLabel: "Tutorial cover to cover",
-    vibeColor: "echo",
-    reaction: "Both paths get you there — yours is yours.",
+      "When you say you'll do a thing, the thing gets done. Every time.",
   },
 
   // ───────── Extraversion ─────────
   {
     id: "e1",
     dimension: "extraversion",
+    member: "rex",
     prompt:
-      "You walk into a party where you only know one person.",
-    leftLabel: "Find them, don't move",
-    rightLabel: "3 new friends in 10 min",
-    vibeColor: "rex",
-    reaction: "Knowing your social default is half the battle.",
+      "You walk into a party knowing one person and walk out knowing seven.",
   },
   {
     id: "e2",
     dimension: "extraversion",
-    prompt:
-      "After a long week, recharging looks like...",
-    leftLabel: "Solo. Dark room. Bliss.",
-    rightLabel: "Dinner with the crew",
-    vibeColor: "echo",
-    reaction: "Energy comes from different places. Both valid.",
+    member: "nova",
+    prompt: "A loud, chaotic group brainstorm? That's your happy place.",
   },
   {
     id: "e3",
     dimension: "extraversion",
+    member: "sage",
     prompt:
-      "You'd genuinely rather have a quiet night in than be the center of attention.",
-    leftLabel: "Spotlight me",
-    rightLabel: "Quiet, please",
+      "After a long week, the perfect night is just you, a door that locks, and quiet.",
     reverse: true,
-    vibeColor: "sage",
-    reaction: "Quiet voices often carry the loudest ideas.",
   },
   {
     id: "e4",
     dimension: "extraversion",
+    member: "echo",
     prompt:
-      "Big group brainstorm — chaotic and loud. How do you feel?",
-    leftLabel: "Internally screaming",
-    rightLabel: "Thriving",
-    vibeColor: "nova",
-    reaction: "Now I know how to pace our sessions.",
+      "Talking it out loud is how you figure out what you actually think.",
   },
 
   // ───────── Agreeableness ─────────
   {
     id: "a1",
     dimension: "agreeableness",
+    member: "echo",
     prompt:
-      "Your coworker took credit for your idea in front of the boss.",
-    leftLabel: "Confront them today",
-    rightLabel: "Let it slide, work around it",
-    vibeColor: "rex",
-    reaction: "Oh, I will definitely remember this.",
+      "A friend's having a rough day, and yours quietly reshapes itself around them.",
   },
   {
     id: "a2",
     dimension: "agreeableness",
+    member: "aria",
     prompt:
-      "Someone's clearly wrong but feels strongly about it. You...",
-    leftLabel: "Set them straight",
-    rightLabel: "Listen first, then maybe nudge",
-    vibeColor: "echo",
-    reaction: "How you disagree tells me everything.",
+      "Someone's clearly wrong — but you hear them all the way out before you say so.",
   },
   {
     id: "a3",
     dimension: "agreeableness",
+    member: "rex",
     prompt:
-      "If someone needs help and it's inconvenient — honestly, you usually pass.",
-    leftLabel: "I always show up",
-    rightLabel: "Not my problem today",
+      "If helping out is genuinely inconvenient, you'll usually pass.",
     reverse: true,
-    vibeColor: "aria",
-    reaction: "Boundaries are data too.",
   },
   {
     id: "a4",
     dimension: "agreeableness",
+    member: "nova",
     prompt:
-      "A stranger holds the door for you with the wrong amount of eye contact. You feel...",
-    leftLabel: "Lowkey suspicious",
-    rightLabel: "Genuinely warmed",
-    vibeColor: "nova",
-    reaction: "I love a person who notices small kindnesses.",
+      "Small kindnesses from strangers can genuinely make your whole day.",
   },
 
   // ───────── Neuroticism ─────────
   {
     id: "n1",
     dimension: "neuroticism",
-    prompt: "Plans got cancelled at the last minute.",
-    leftLabel: "Pure relief",
-    rightLabel: "Spiral a little",
-    vibeColor: "echo",
-    reaction: "Got you — I'll know when to check in.",
+    member: "echo",
+    prompt:
+      "A \"we need to talk\" text can quietly take over your entire afternoon.",
   },
   {
     id: "n2",
     dimension: "neuroticism",
+    member: "rex",
     prompt:
-      "You read a text from a friend that's just 'we need to talk.'",
-    leftLabel: "Cool, I'm calling",
-    rightLabel: "I am now physically ill",
-    vibeColor: "rex",
-    reaction: "Yeah. Yeah I do this too.",
+      "Plans fall through last-minute and, be honest, part of you spirals a little.",
   },
   {
     id: "n3",
     dimension: "neuroticism",
+    member: "sage",
     prompt:
-      "You bounce back from setbacks pretty fast — they don't really shake you.",
-    leftLabel: "Built different",
-    rightLabel: "They stick with me",
+      "Setbacks roll off you — a day later, you've mostly let them go.",
     reverse: true,
-    vibeColor: "sage",
-    reaction: "Resilience and sensitivity aren't opposites.",
   },
   {
     id: "n4",
     dimension: "neuroticism",
+    member: "aria",
     prompt:
-      "Quiet moment alone. Your mind drifts to...",
-    leftLabel: "Wherever, it's fine",
-    rightLabel: "That thing from 2019",
-    vibeColor: "aria",
-    reaction: "Logged. Now I know how to time the heavy stuff.",
+      "In quiet moments, your brain loves to queue up that one thing from years ago.",
   },
 ];
 
+/** What the orbs mean, smallest to largest. */
+export const SCALE_LABELS = [
+  "not me",
+  "not really",
+  "sometimes",
+  "mostly me",
+  "very me",
+] as const;
+
 // ---------------------------------------------------------------------------
-// Scoring
+// Scoring — answers are 1-5 Likert values keyed by question id
 // ---------------------------------------------------------------------------
 export function scoreQuiz(answers: Record<string, number>): BigFiveScores {
   const sums: Record<BigFiveDimension, number> = {
@@ -276,14 +229,15 @@ export function scoreQuiz(answers: Record<string, number>): BigFiveScores {
   for (const q of BIG_FIVE_QUESTIONS) {
     const raw = answers[q.id];
     if (raw === undefined) continue;
-    const clamped = Math.max(0, Math.min(100, raw));
-    const value = q.reverse ? 100 - clamped : clamped;
+    const clamped = Math.max(1, Math.min(5, Math.round(raw)));
+    const normalized = (clamped - 1) / 4; // 0..1
+    const value = q.reverse ? 1 - normalized : normalized;
     sums[q.dimension] += value;
     counts[q.dimension] += 1;
   }
 
   const dim = (d: BigFiveDimension): number =>
-    counts[d] === 0 ? 50 : Math.round(sums[d] / counts[d]);
+    counts[d] === 0 ? 50 : Math.round((sums[d] / counts[d]) * 100);
 
   return {
     openness: dim("openness"),
@@ -294,6 +248,12 @@ export function scoreQuiz(answers: Record<string, number>): BigFiveScores {
   };
 }
 
+/** Apply reverse-coding so the backend can average raw 1-5 responses. */
+export function toBackendResponse(q: Question, value: number): number {
+  const clamped = Math.max(1, Math.min(5, Math.round(value)));
+  return q.reverse ? 6 - clamped : clamped;
+}
+
 export function getDominantTrait(scores: BigFiveScores): BigFiveDimension {
   const entries = Object.entries(scores) as Array<[BigFiveDimension, number]>;
   // Distance from neutral 50 — strongest deviation wins
@@ -302,78 +262,145 @@ export function getDominantTrait(scores: BigFiveScores): BigFiveDimension {
 }
 
 // ---------------------------------------------------------------------------
-// Calibration story — 2 paragraphs, name-checks specific members
+// Calibration reveal — trait display + dominant-trait celebrations
 // ---------------------------------------------------------------------------
-const TRAIT_LINES: Record<
+export const TRAIT_DISPLAY: Record<
   BigFiveDimension,
-  { high: string; low: string; member: string }
+  { label: string; sub: string; member: CouncilMemberId }
 > = {
   openness: {
-    high: "Nova picked up on how much you light up around new ideas — she's already cooking up tangents you'll love.",
-    low: "Sage saw that you prefer ideas with their feet on the ground, so they'll keep things concrete and useful.",
-    member: "Nova",
+    label: "Openness",
+    sub: "how far you'll wander",
+    member: "nova",
   },
   conscientiousness: {
-    high: "Aria noticed your appreciation for structure — expect her to bring receipts, frameworks, and clean follow-throughs.",
-    low: "Aria caught that you move by intuition more than plans, so she'll meet you with options instead of itineraries.",
-    member: "Aria",
+    label: "Conscientiousness",
+    sub: "how you like things done",
+    member: "aria",
   },
   extraversion: {
-    high: "Rex caught your social energy and is fully ready to push, banter, and keep the room loud when you want it loud.",
-    low: "Echo noticed you recharge in quieter spaces — she'll keep things gentle and give your voice room to land.",
-    member: "Rex",
+    label: "Extraversion",
+    sub: "where your energy comes from",
+    member: "rex",
   },
   agreeableness: {
-    high: "Echo heard your warmth and is going to make sure every conversation feels like it actually cares back.",
-    low: "Rex appreciated your edge — he'll happily play sparring partner and keep things honest, not polite.",
-    member: "Echo",
+    label: "Agreeableness",
+    sub: "how much warmth you lead with",
+    member: "echo",
   },
   neuroticism: {
-    high: "Echo picked up on your sensitivity to undercurrents — she'll be the one checking in when things feel heavy.",
-    low: "Sage saw your steady center, so she'll trust you with the harder questions when they come up.",
-    member: "Echo",
+    label: "Sensitivity",
+    sub: "how deeply the waves hit",
+    member: "sage",
   },
 };
 
-export function getCalibrationStory(scores: BigFiveScores): string {
+export interface Celebration {
+  member: CouncilMemberId;
+  headline: string;
+  line: string;
+}
+
+const CELEBRATIONS: Record<
+  BigFiveDimension,
+  { high: Celebration; low: Celebration }
+> = {
+  openness: {
+    high: {
+      member: "nova",
+      headline: "High openness. Nova is THRILLED.",
+      line: "“New ideas, weird tangents, museums at midnight — we are going to get along SO well.”",
+    },
+    low: {
+      member: "sage",
+      headline: "Feet on the ground. Sage approves.",
+      line: "“You like ideas that actually land. Good — so do I.”",
+    },
+  },
+  conscientiousness: {
+    high: {
+      member: "aria",
+      headline: "Beautifully organised. Aria found her person.",
+      line: "“You start before the deadline. I could honestly cry.”",
+    },
+    low: {
+      member: "nova",
+      headline: "You improvise. Nova respects the chaos.",
+      line: "“Plans are more of a suggestion, right? Same. SAME.”",
+    },
+  },
+  extraversion: {
+    high: {
+      member: "rex",
+      headline: "Big room energy. Rex is ready.",
+      line: "“Loud brainstorms, late nights, zero awkward silences. Let's go.”",
+    },
+    low: {
+      member: "echo",
+      headline: "Quiet power. Echo gets it completely.",
+      line: "“We'll keep it gentle. Your voice gets all the room it needs.”",
+    },
+  },
+  agreeableness: {
+    high: {
+      member: "echo",
+      headline: "A genuinely warm one. Echo called it first.",
+      line: "“I had a feeling about you from the very first hello.”",
+    },
+    low: {
+      member: "rex",
+      headline: "You keep it honest. Rex is delighted.",
+      line: "“Finally — someone who'll argue back. This is going to be fun.”",
+    },
+  },
+  neuroticism: {
+    high: {
+      member: "echo",
+      headline: "You feel things deeply. Echo's got you.",
+      line: "“I'll know when to check in. That's a promise.”",
+    },
+    low: {
+      member: "sage",
+      headline: "Steady as anything. Sage is impressed.",
+      line: "“Calm centre, clear head. We'll trust you with the hard questions.”",
+    },
+  },
+};
+
+export function getCelebration(scores: BigFiveScores): Celebration {
   const dominant = getDominantTrait(scores);
-  const lines: string[] = [];
-
-  // Paragraph 1: the dominant trait headline
-  const dominantHigh = scores[dominant] >= 50;
-  const dominantCopy = dominantHigh
-    ? TRAIT_LINES[dominant].high
-    : TRAIT_LINES[dominant].low;
-  lines.push(
-    `The council just spent a minute getting to know you, and here's what landed. ${dominantCopy}`,
-  );
-
-  // Paragraph 2: two more notable traits
-  const others = (Object.keys(scores) as BigFiveDimension[])
-    .filter((d) => d !== dominant)
-    .sort((a, b) => Math.abs(scores[b] - 50) - Math.abs(scores[a] - 50))
-    .slice(0, 2);
-
-  const secondary = others
-    .map((d) => (scores[d] >= 50 ? TRAIT_LINES[d].high : TRAIT_LINES[d].low))
-    .join(" ");
-
-  lines.push(
-    `${secondary} The rest of the room — the parts of you that landed in between — they'll feel out together as you go. This isn't a fixed read; it's a starting note. The more you talk, the sharper they get.`,
-  );
-
-  return lines.join("\n\n");
+  return scores[dominant] >= 50
+    ? CELEBRATIONS[dominant].high
+    : CELEBRATIONS[dominant].low;
 }
 
 // ---------------------------------------------------------------------------
-// Demographics — language + purpose options used by /demographics page
+// Demographics — a five-question conversation, one member asking at a time
 // ---------------------------------------------------------------------------
-export const AGE_RANGES = [
-  { id: "18-24", label: "18 — 24" },
-  { id: "25-34", label: "25 — 34" },
-  { id: "35-44", label: "35 — 44" },
-  { id: "45+", label: "45+" },
-] as const;
+export type DemographicStepKey =
+  | "name"
+  | "birthday"
+  | "gender"
+  | "location"
+  | "language";
+
+export interface DemographicOption {
+  id: string;
+  label: string;
+  flag?: string;
+}
+
+export interface DemographicStep {
+  key: DemographicStepKey;
+  member: CouncilMemberId;
+  prompt: string;
+  kind: "text" | "date" | "choice";
+  options?: ReadonlyArray<DemographicOption>;
+  placeholder?: string;
+  optional?: boolean;
+  skipLabel?: string;
+  recapLabel: string;
+}
 
 export const LANGUAGES = [
   { id: "en", label: "English", flag: "🇬🇧" },
@@ -384,25 +411,71 @@ export const LANGUAGES = [
   { id: "ja", label: "日本語", flag: "🇯🇵" },
 ] as const;
 
-export const PURPOSES = [
-  { id: "brainstorm", label: "Brainstorm", icon: "lightbulb" },
-  { id: "decide", label: "Decide", icon: "fork_right" },
-  { id: "vent", label: "Vent", icon: "favorite" },
-  { id: "learn", label: "Learn", icon: "school" },
-  { id: "play", label: "Play", icon: "sports_esports" },
-  { id: "curious", label: "Just curious", icon: "explore" },
-] as const;
+export const GENDER_OPTIONS: ReadonlyArray<DemographicOption> = [
+  { id: "woman", label: "Woman" },
+  { id: "man", label: "Man" },
+  { id: "non-binary", label: "Non-binary" },
+  { id: "another-way", label: "Another way" },
+];
 
-export type DemographicsProfile = {
-  name: string;
-  ageRange: string;
-  language: string;
-  location?: string;
-  purposes: string[];
-};
+export const DEMOGRAPHIC_STEPS: ReadonlyArray<DemographicStep> = [
+  {
+    key: "name",
+    member: "aria",
+    prompt:
+      "Hey, you made it. I'm Aria — I keep the receipts around here. First things first: what should we call you?",
+    kind: "text",
+    placeholder: "Your name",
+    recapLabel: "Name",
+  },
+  {
+    key: "birthday",
+    member: "sage",
+    prompt:
+      "Sage here. When's your birthday? Long arcs matter — I like to know the shape of a year before I map it.",
+    kind: "date",
+    optional: true,
+    skipLabel: "Skip this one",
+    recapLabel: "Birthday",
+  },
+  {
+    key: "gender",
+    member: "echo",
+    prompt:
+      "Echo — hi. Only if you feel like sharing: how do you identify?",
+    kind: "choice",
+    options: GENDER_OPTIONS,
+    optional: true,
+    skipLabel: "Rather not say",
+    recapLabel: "Identity",
+  },
+  {
+    key: "location",
+    member: "nova",
+    prompt:
+      "Nova! Okay, my turn. Where's home base? I want to picture the light where you are.",
+    kind: "text",
+    placeholder: "City, country, anywhere",
+    optional: true,
+    skipLabel: "Keep it mysterious",
+    recapLabel: "Home base",
+  },
+  {
+    key: "language",
+    member: "echo",
+    prompt:
+      "Me again — last one, promise. Which language feels most like home?",
+    kind: "choice",
+    options: LANGUAGES,
+    recapLabel: "Language",
+  },
+];
+
+export type DemographicAnswers = Partial<Record<DemographicStepKey, string>>;
 
 // ---------------------------------------------------------------------------
-// LocalStorage keys (used until backend is wired)
+// LocalStorage keys — dashboard reads `profile.name`, calibrating reads
+// `personality.scores`. Keep both shapes stable.
 // ---------------------------------------------------------------------------
 export const STORAGE_KEYS = {
   profile: "manyminds:profile",

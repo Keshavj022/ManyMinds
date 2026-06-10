@@ -49,7 +49,7 @@ export default function CTABanner() {
               </div>
 
               <p className="text-[11px] font-[var(--font-label)] font-semibold uppercase tracking-[0.32em] text-white/55 mb-6">
-                Your council awaits
+                Your move
               </p>
 
               <h2 className="font-[var(--font-headline)] font-bold text-4xl md:text-5xl lg:text-6xl leading-[1.05]">

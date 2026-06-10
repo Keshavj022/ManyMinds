@@ -9,9 +9,10 @@ const COLUMNS: ReadonlyArray<{
   {
     title: "Product",
     links: [
+      { name: "The Journey", href: "/#council-journey" },
       { name: "Council", href: "/#about" },
-      { name: "Debate", href: "/#debate" },
-      { name: "Games", href: "/#games" },
+      { name: "Worlds", href: "/#environments" },
+      { name: "Memory", href: "/#memory" },
       { name: "How it works", href: "/#how-it-works" },
     ],
   },

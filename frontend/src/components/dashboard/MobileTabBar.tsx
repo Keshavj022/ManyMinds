@@ -15,7 +15,10 @@ export default function MobileTabBar() {
   const items = NAV_ITEMS.slice(0, 5);
 
   return (
-    <nav className="lg:hidden fixed bottom-3 left-3 right-3 z-40 glass-strong rounded-2xl flex items-stretch justify-between px-1 py-1.5 border border-white/8 shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
+    <nav
+      className="lg:hidden fixed left-3 right-3 z-40 glass-warm rounded-3xl flex items-stretch justify-between px-1.5 py-1.5 shadow-[0_12px_40px_rgba(6,5,10,0.5)]"
+      style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+    >
       {items.map((item) => {
         const isActive =
           !!pathname &&
@@ -25,23 +28,28 @@ export default function MobileTabBar() {
           <Link
             key={item.href}
             href={item.href}
-            className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl"
-            style={{ color: isActive ? color.hex : "rgba(255,255,255,0.55)" }}
+            className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-2xl transition-colors"
+            style={{
+              color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
+            }}
           >
             {isActive && (
               <motion.span
                 layoutId="mobile-tab-active"
-                className="absolute inset-0 rounded-xl -z-10"
+                className="absolute inset-0 rounded-2xl -z-10"
                 transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 style={{
-                  background: color.soft,
-                  boxShadow: `inset 0 0 0 1px ${color.soft}`,
+                  background:
+                    "linear-gradient(110deg, rgba(155,135,216,0.20), rgba(216,163,184,0.13))",
+                  boxShadow:
+                    "0 0 16px rgba(155,135,216,0.10), inset 0 0 0 1px rgba(255,255,255,0.06)",
                 }}
               />
             )}
             <span
               className="material-symbols-outlined text-[22px]"
               style={{
+                color: isActive ? color.hex : undefined,
                 fontVariationSettings: isActive
                   ? "'FILL' 1, 'wght' 500"
                   : "'FILL' 0, 'wght' 400",

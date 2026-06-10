@@ -35,8 +35,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white/55 text-sm">
         <span className="inline-flex items-center gap-3">
-          <span className="w-4 h-4 rounded-full border-2 border-white/15 border-t-white/60 animate-spin" />
-          Loading…
+          <span className="w-4 h-4 rounded-full border-2 border-white/15 border-t-[#e0b083]/70 animate-spin" />
+          One sec — the room&rsquo;s waking up…
         </span>
       </div>
     );
@@ -45,21 +45,25 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <EnvironmentProvider>
       <div className="min-h-[100dvh] text-white flex relative">
-        <AmbientBackground variant="minimal" />
+        <AmbientBackground variant="warm" />
 
         <Sidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
         <div className="flex-1 flex flex-col min-w-0">
           <Header onMenuOpen={() => setDrawerOpen(true)} />
-          <main className="flex-1 overflow-y-auto pb-24 lg:pb-10">
-            <div className="px-4 sm:px-6 lg:px-10 pt-5 lg:pt-8 w-full max-w-7xl mx-auto">
+          <main className="flex-1 overflow-y-auto pb-28 lg:pb-12">
+            <div className="px-4 sm:px-6 lg:px-10 pt-6 lg:pt-9 w-full max-w-7xl mx-auto">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={pathname ?? "root"}
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  exit={{
+                    opacity: 0,
+                    y: -8,
+                    transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
+                  }}
+                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {children}
                 </motion.div>

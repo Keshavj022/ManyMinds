@@ -6,7 +6,7 @@ import ScenePreview from "@/components/dashboard/ScenePreview";
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-10 pb-8">
+    <div className="space-y-10 pb-10">
       <WelcomeBlock />
       <QuickStartGrid />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

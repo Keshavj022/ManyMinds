@@ -1,12 +1,22 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import AuroraButton from "@/components/ui/AuroraButton";
+import {
+  AuthField,
+  BusyButton,
+  EASE,
+  ErrorChip,
+  FormHeader,
+  MemberQuip,
+} from "@/components/auth/FormKit";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
+import { CouncilMemberId } from "@/lib/design-tokens";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function deriveUsername(seed: string, fallback: string): string {
   const cleaned = seed
@@ -17,6 +27,8 @@ function deriveUsername(seed: string, fallback: string): string {
   return `${fallback}${Math.floor(Math.random() * 9000 + 1000)}`;
 }
 
+type FieldKey = "name" | "email" | "password";
+
 export default function SignupPage() {
   const router = useRouter();
   const { signup } = useAuth();
@@ -26,10 +38,51 @@ export default function SignupPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Which field they're in right now — drives the live council reaction.
+  const [active, setActive] = useState<FieldKey | null>(null);
+  const [touched, setTouched] = useState<Record<FieldKey, boolean>>({
+    name: false,
+    email: false,
+    password: false,
+  });
+
+  const nameOk = name.trim().length > 0;
+  const emailOk = EMAIL_RE.test(email.trim());
+  const passwordOk = password.length >= 8;
+
+  // The council reacts as you type — one member per field.
+  const reaction: { key: string; id: CouncilMemberId; text: string } | null =
+    (() => {
+      if (active === "name") {
+        const trimmed = name.trim();
+        return trimmed.length >= 2
+          ? { key: "name-named", id: "echo", text: `${trimmed}. We like it already.` }
+          : { key: "name", id: "echo", text: "Go on — what should we call you?" };
+      }
+      if (active === "email") {
+        return {
+          key: "email",
+          id: "aria",
+          text: "Noted. Filed under ‘how to find you again.’",
+        };
+      }
+      if (active === "password") {
+        return { key: "password", id: "rex", text: "Type away — we won't peek. Promise." };
+      }
+      return null;
+    })();
+
+  const markTouched = (field: FieldKey) =>
+    setTouched((t) => (t[field] ? t : { ...t, [field]: true }));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (busy) return;
     setError(null);
+    if (!nameOk || !emailOk || !passwordOk) {
+      setTouched({ name: true, email: true, password: true });
+      return;
+    }
     setBusy(true);
     try {
       const username = deriveUsername(name || email.split("@")[0], "friend");
@@ -52,7 +105,7 @@ export default function SignupPage() {
           ? err.detail && typeof err.detail === "object" && "detail" in err.detail
             ? String((err.detail as { detail: unknown }).detail)
             : err.message
-          : "Something went wrong. Try again.";
+          : "Something hiccuped on our side. Give it another go.";
       setError(msg);
     } finally {
       setBusy(false);
@@ -63,106 +116,109 @@ export default function SignupPage() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.45, ease: EASE }}
       className="w-full"
     >
-      <div className="mb-8 text-center md:text-left">
-        <p className="text-[11px] font-[var(--font-label)] uppercase tracking-[0.32em] text-white/55 mb-3">
-          New account
-        </p>
-        <h2 className="font-[var(--font-headline)] text-3xl md:text-4xl font-semibold text-white mb-2">
-          Create your <span className="aurora-text">Council</span>
-        </h2>
-        <p className="text-white/55 text-sm">
-          Five minds. One table. About 90 seconds to set up.
-        </p>
-      </div>
+      <FormHeader
+        kicker="New here"
+        title={
+          <>
+            Come meet <span className="aurora-text">everyone</span>
+          </>
+        }
+        sub="Five friends, one table. You'll be mid-conversation in about 90 seconds."
+      >
+        {/* The council reacts as you type — fixed height, no layout shift. */}
+        <div className="mt-4 flex min-h-[26px] justify-center md:justify-start">
+          <AnimatePresence mode="wait">
+            {reaction && (
+              <MemberQuip key={reaction.key} id={reaction.id} text={reaction.text} />
+            )}
+          </AnimatePresence>
+        </div>
+      </FormHeader>
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        <div className="space-y-1.5">
-          <label
-            htmlFor="signup-name"
-            className="block text-xs font-[var(--font-label)] font-semibold text-white/70 ml-1"
-          >
-            Full Name
-          </label>
-          <input
-            id="signup-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            autoComplete="name"
-            className="w-full rounded-xl px-4 py-3 text-white placeholder:text-white/30 text-sm"
-            placeholder="Ada Lovelace"
-          />
-        </div>
+        <AuthField
+          id="signup-name"
+          label="Your name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          autoComplete="name"
+          placeholder="Ada Lovelace"
+          onFocus={() => setActive("name")}
+          onBlur={() => {
+            setActive((a) => (a === "name" ? null : a));
+            markTouched("name");
+          }}
+          hint={
+            touched.name && !nameOk
+              ? "Just so they know what to call you."
+              : undefined
+          }
+        />
 
-        <div className="space-y-1.5">
-          <label
-            htmlFor="signup-email"
-            className="block text-xs font-[var(--font-label)] font-semibold text-white/70 ml-1"
-          >
-            Email
-          </label>
-          <input
-            id="signup-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            className="w-full rounded-xl px-4 py-3 text-white placeholder:text-white/30 text-sm"
-            placeholder="you@example.com"
-          />
-        </div>
+        <AuthField
+          id="signup-email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+          placeholder="you@example.com"
+          onFocus={() => setActive("email")}
+          onBlur={() => {
+            setActive((a) => (a === "email" ? null : a));
+            markTouched("email");
+          }}
+          hint={
+            touched.email && !emailOk
+              ? email.trim()
+                ? "That email looks a touch off — mind double-checking?"
+                : "We'll need this one to let you back in later."
+              : undefined
+          }
+        />
 
-        <div className="space-y-1.5">
-          <label
-            htmlFor="signup-password"
-            className="block text-xs font-[var(--font-label)] font-semibold text-white/70 ml-1"
-          >
-            Password
-          </label>
-          <input
-            id="signup-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-            autoComplete="new-password"
-            className="w-full rounded-xl px-4 py-3 text-white placeholder:text-white/30 text-sm"
-            placeholder="At least 8 characters"
-          />
-          <p className="text-[10px] text-white/40 ml-2 mt-1">
-            Min 8 characters.
-          </p>
-        </div>
+        <AuthField
+          id="signup-password"
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={8}
+          autoComplete="new-password"
+          placeholder="At least 8 characters"
+          onFocus={() => setActive("password")}
+          onBlur={() => {
+            setActive((a) => (a === "password" ? null : a));
+            markTouched("password");
+          }}
+          hint={
+            touched.password && !passwordOk
+              ? "Almost — eight characters keeps things cozy and safe."
+              : undefined
+          }
+        />
 
-        {error && (
-          <p
-            role="alert"
-            className="text-sm text-[color:var(--color-danger)] bg-[color:var(--color-danger)]/10 border border-[color:var(--color-danger)]/30 rounded-xl px-3 py-2"
-          >
-            {error}
-          </p>
-        )}
+        <AnimatePresence>{error && <ErrorChip>{error}</ErrorChip>}</AnimatePresence>
 
         <div className="pt-1">
-          <AuroraButton
-            type="submit"
-            variant="primary"
-            size="lg"
-            fullWidth
-            disabled={busy || !name || !email || password.length < 8}
+          <BusyButton
+            busy={busy}
+            busyLabel="Pulling up a chair for you…"
+            disabled={!nameOk || !emailOk || !passwordOk}
           >
-            {busy ? "Creating your council…" : "Create Account"}
-          </AuroraButton>
+            Take your seat
+          </BusyButton>
         </div>
 
-        <p className="text-[10px] text-center text-white/45 leading-relaxed pt-1">
-          By signing up, you agree to our{" "}
+        <p className="pt-1 text-center text-[11px] leading-relaxed text-white/45">
+          By joining, you&apos;re okay with our{" "}
           <Link
             href="/terms"
             className="underline decoration-white/30 hover:text-white"
@@ -181,12 +237,12 @@ export default function SignupPage() {
       </form>
 
       <p className="mt-7 text-center text-sm text-white/55">
-        Already have an account?{" "}
+        Been here before?{" "}
         <Link
           href="/login"
-          className="text-white font-semibold hover:underline hover:underline-offset-4 decoration-white/30"
+          className="font-semibold text-white decoration-white/30 hover:underline hover:underline-offset-4"
         >
-          Sign In
+          Sign in
         </Link>
       </p>
     </motion.div>

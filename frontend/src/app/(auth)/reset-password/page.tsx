@@ -1,10 +1,19 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
-import AuroraButton from "@/components/ui/AuroraButton";
+import {
+  AuthField,
+  BackToSignIn,
+  BusyButton,
+  ConfirmCard,
+  EASE,
+  ErrorChip,
+  FormHeader,
+  MemberQuip,
+} from "@/components/auth/FormKit";
 import { ApiError, api } from "@/lib/api";
 
 function ResetPasswordInner() {
@@ -13,20 +22,34 @@ function ResetPasswordInner() {
   const token = params.get("token") ?? "";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [touchedPassword, setTouchedPassword] = useState(false);
+  const [touchedConfirm, setTouchedConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   if (!token) {
     return (
-      <div className="rounded-2xl p-6 glass text-sm text-white/75 leading-relaxed">
-        This reset link is missing its token. Open the link from your email
-        again, or{" "}
-        <Link href="/forgot-password" className="text-white underline decoration-white/30">
-          request a fresh one
-        </Link>
-        .
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: EASE }}
+      >
+        <ConfirmCard title="This link lost its key">
+          <p>
+            The reset link is missing its token — happens to the best of
+            links. Open the one from your email again, or{" "}
+            <Link
+              href="/forgot-password"
+              className="text-white underline decoration-white/30"
+            >
+              ask for a fresh one
+            </Link>
+            .
+          </p>
+        </ConfirmCard>
+        <BackToSignIn />
+      </motion.div>
     );
   }
 
@@ -35,11 +58,11 @@ function ResetPasswordInner() {
     if (busy) return;
     setError(null);
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError("Almost — your new password needs at least 8 characters.");
       return;
     }
     if (password !== confirm) {
-      setError("Passwords don't match.");
+      setError("Those two don't quite match yet. One more look?");
       return;
     }
     setBusy(true);
@@ -55,7 +78,7 @@ function ResetPasswordInner() {
       setError(
         err instanceof ApiError
           ? err.message
-          : "Couldn't reset the password. The link may have expired.",
+          : "Couldn't set the new password — the link may have expired.",
       );
     } finally {
       setBusy(false);
@@ -67,100 +90,90 @@ function ResetPasswordInner() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl p-6 glass text-sm text-white/85 leading-relaxed"
+        transition={{ duration: 0.5, ease: EASE }}
       >
-        Password updated. Redirecting you to sign in…
+        <ConfirmCard title="All set">
+          <p>
+            Password updated — fresh start, same friends. Taking you back to
+            sign in…
+          </p>
+          <div className="pt-1">
+            <MemberQuip id="sage" text="Good. Now, where were we?" />
+          </div>
+        </ConfirmCard>
       </motion.div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-      <div className="mb-2 text-center md:text-left">
-        <p className="text-[11px] font-[var(--font-label)] uppercase tracking-[0.32em] text-white/55 mb-3">
-          Set a new password
-        </p>
-        <h2 className="font-[var(--font-headline)] text-3xl md:text-4xl font-semibold text-white mb-2">
-          Reset your <span className="aurora-text">password</span>
-        </h2>
-        <p className="text-white/55 text-sm">
-          Pick something memorable. At least 8 characters.
-        </p>
-      </div>
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: EASE }}
+      className="w-full"
+    >
+      <FormHeader
+        kicker="New password"
+        title={
+          <>
+            A fresh <span className="aurora-text">start</span>
+          </>
+        }
+        sub="Pick something memorable — at least 8 characters. Rex promises not to peek."
+      />
 
-      <div className="space-y-1.5">
-        <label
-          htmlFor="reset-new"
-          className="block text-xs font-[var(--font-label)] font-semibold text-white/70 ml-1"
-        >
-          New password
-        </label>
-        <input
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <AuthField
           id="reset-new"
+          label="New password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={8}
           autoComplete="new-password"
-          className="w-full rounded-xl px-4 py-3 text-white placeholder:text-white/30 text-sm"
           placeholder="At least 8 characters"
+          onBlur={() => setTouchedPassword(true)}
+          hint={
+            touchedPassword && password.length > 0 && password.length < 8
+              ? "A few more characters — eight keeps it safe."
+              : undefined
+          }
         />
-      </div>
 
-      <div className="space-y-1.5">
-        <label
-          htmlFor="reset-confirm"
-          className="block text-xs font-[var(--font-label)] font-semibold text-white/70 ml-1"
-        >
-          Confirm new password
-        </label>
-        <input
+        <AuthField
           id="reset-confirm"
+          label="Confirm new password"
           type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           required
           minLength={8}
           autoComplete="new-password"
-          className="w-full rounded-xl px-4 py-3 text-white placeholder:text-white/30 text-sm"
           placeholder="Type it again"
+          onBlur={() => setTouchedConfirm(true)}
+          hint={
+            touchedConfirm && confirm.length > 0 && password !== confirm
+              ? "These two don't quite match yet."
+              : undefined
+          }
         />
-      </div>
 
-      {error && (
-        <p
-          role="alert"
-          className="text-sm text-[color:var(--color-danger)] bg-[color:var(--color-danger)]/10 border border-[color:var(--color-danger)]/30 rounded-xl px-3 py-2"
-        >
-          {error}
-        </p>
-      )}
+        <AnimatePresence>{error && <ErrorChip>{error}</ErrorChip>}</AnimatePresence>
 
-      <div className="pt-1">
-        <AuroraButton
-          type="submit"
-          variant="primary"
-          size="lg"
-          fullWidth
-          disabled={busy || password.length < 8 || password !== confirm}
-        >
-          {busy ? "Updating…" : "Set new password"}
-        </AuroraButton>
-      </div>
+        <div className="pt-1">
+          <BusyButton
+            busy={busy}
+            busyLabel="Locking it in…"
+            disabled={password.length < 8 || password !== confirm}
+          >
+            Set new password
+          </BusyButton>
+        </div>
+      </form>
 
-      <p className="text-center text-sm text-white/55">
-        <Link
-          href="/login"
-          className="inline-flex items-center justify-center gap-1.5 hover:text-white transition-colors group"
-        >
-          <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-1 transition-transform">
-            arrow_back
-          </span>
-          Back to Sign In
-        </Link>
-      </p>
-    </form>
+      <BackToSignIn />
+    </motion.div>
   );
 }
 
@@ -170,7 +183,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <div className="w-full">
-          <p className="text-sm text-white/55">Loading…</p>
+          <p className="text-sm text-white/55">One sec…</p>
         </div>
       }
     >

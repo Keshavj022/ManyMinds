@@ -7,6 +7,7 @@ import { CouncilMemberId, councilColors } from "@/lib/design-tokens";
 interface Tile {
   title: string;
   hint: string;
+  verb: string;
   href: string;
   icon: string;
   member: CouncilMemberId;
@@ -14,17 +15,17 @@ interface Tile {
 
 const TILES: ReadonlyArray<Tile> = [
   {
-    // Phrasing is intentionally neutral — works for new users (open the
-    // first thread) and returning ones (pick up where they left off).
-    title: "Start a thread",
-    hint: "Open the floor. The whole council is listening.",
+    title: "Talk it out",
+    hint: "Open the floor — all five of us are listening.",
+    verb: "Talk",
     href: "/chat",
     icon: "forum",
     member: "aria",
   },
   {
     title: "Settle a debate",
-    hint: "Five voices, one topic, no fence-sitting.",
+    hint: "Pick a topic. We'll take sides — no fence-sitting.",
+    verb: "Debate",
     href: "/debate",
     icon: "balance",
     member: "rex",
@@ -32,22 +33,26 @@ const TILES: ReadonlyArray<Tile> = [
   {
     title: "Play a game",
     hint: "Chess, Truth or Dare, Ludo — your move.",
+    verb: "Play",
     href: "/games",
     icon: "extension",
     member: "nova",
   },
   {
-    title: "Walk through your memory",
-    hint: "See what the council remembers about you.",
+    title: "See what we remember",
+    hint: "Your memory wall — every thread we're holding.",
+    verb: "Look",
     href: "/memory",
     icon: "hub",
     member: "echo",
   },
 ];
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 export default function QuickStartGrid() {
   return (
-    <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       {TILES.map((tile, i) => (
         <QuickStartTile key={tile.title} tile={tile} index={i} />
       ))}
@@ -59,30 +64,36 @@ function QuickStartTile({ tile, index }: { tile: Tile; index: number }) {
   const color = councilColors[tile.member];
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 + index * 0.06, duration: 0.45 }}
+      transition={{ delay: 0.12 + index * 0.07, duration: 0.5, ease: EASE }}
+      whileHover={{
+        y: -4,
+        scale: 1.02,
+        transition: { type: "spring", stiffness: 320, damping: 22 },
+      }}
+      whileTap={{
+        scale: 0.99,
+        transition: { type: "spring", stiffness: 400, damping: 24 },
+      }}
+      className="h-full"
     >
       <Link
         href={tile.href}
-        className="group relative block h-full rounded-3xl p-6 glass border border-white/8 overflow-hidden transition-all duration-300 hover:-translate-y-1"
+        className="group relative block h-full rounded-3xl p-6 glass-warm overflow-hidden"
       >
-        {/* Halo on hover */}
+        {/* Member-coloured halo on hover */}
         <span
           aria-hidden
           className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-3xl"
           style={{
-            background: `radial-gradient(circle, ${color.hex}, transparent 70%)`,
+            background: `radial-gradient(circle, ${color.soft}, transparent 70%)`,
           }}
         />
-        <div className="relative z-10 flex flex-col gap-4 h-full">
+        <div className="relative z-10 flex flex-col gap-5 h-full">
           <div
-            className="w-12 h-12 rounded-2xl grid place-items-center transition-transform group-hover:scale-110"
-            style={{
-              background: color.soft,
-              border: `1px solid ${color.soft}`,
-              boxShadow: `inset 0 0 12px ${color.soft}`,
-            }}
+            className="w-12 h-12 rounded-2xl grid place-items-center transition-transform duration-300 group-hover:scale-110"
+            style={{ background: color.soft }}
           >
             <span
               className="material-symbols-outlined text-[24px]"
@@ -98,11 +109,11 @@ function QuickStartTile({ tile, index }: { tile: Tile; index: number }) {
             <p className="text-sm text-white/55 leading-snug">{tile.hint}</p>
           </div>
           <span
-            className="text-[12px] font-semibold uppercase tracking-wider inline-flex items-center gap-1 transition-colors"
+            className="text-[12px] font-semibold uppercase tracking-wider inline-flex items-center gap-1"
             style={{ color: color.hex }}
           >
-            Open
-            <span className="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-1">
+            {tile.verb}
+            <span className="material-symbols-outlined text-[16px] transition-transform duration-300 group-hover:translate-x-1">
               arrow_forward
             </span>
           </span>

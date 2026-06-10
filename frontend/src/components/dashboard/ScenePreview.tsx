@@ -1,48 +1,49 @@
 "use client";
 
 import { motion } from "framer-motion";
-import GlassCard from "@/components/ui/GlassCard";
 import { councilColors } from "@/lib/design-tokens";
 import { useEnvironment } from "./EnvironmentProvider";
 
 /**
- * "Step inside the room" — a glass-aurora card that previews the 3D scene.
+ * "Come sit with us" — a warm card that previews the 3D scene.
  *
  * NOTE for the 3D team: the canvas slot is `<div id="scene-preview">`. Mount
  * your react-three-fiber Canvas inside that container and the surrounding
  * gradient + play overlay will keep working. Until then we render an SVG
  * silhouette of 5 figures arranged in a circle so the dashboard *feels* like
- * the room is loading.
+ * the room is being set up.
  */
 export default function ScenePreview() {
   const { current } = useEnvironment();
 
   return (
-    <GlassCard variant="default" className="rounded-2xl overflow-hidden">
+    <div className="glass-warm rounded-3xl overflow-hidden">
       <div className="grid md:grid-cols-[1fr_1.4fr]">
         {/* Left — copy */}
-        <div className="p-6 md:p-8 flex flex-col justify-between gap-6 relative">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] font-[var(--font-label)] font-semibold text-white/45 mb-2">
+        <div className="p-7 md:p-8 flex flex-col justify-between gap-7 relative">
+          <div className="space-y-3">
+            <p className="text-[11px] uppercase tracking-[0.32em] font-[var(--font-label)] text-white/55">
               The room
             </p>
             <h2 className="text-2xl md:text-3xl font-[var(--font-headline)] font-bold text-white leading-tight">
-              Step inside the room
+              Come sit with us
             </h2>
-            <p className="mt-3 text-sm text-white/55 leading-relaxed">
-              The council is gathering in the{" "}
-              <span className="text-white font-semibold">{current.name.toLowerCase()}</span>{" "}
-              right now — {current.hint.toLowerCase()}
+            <p className="text-sm text-white/55 leading-relaxed">
+              We&apos;re holding seats in the{" "}
+              <span className="text-white font-semibold">
+                {current.name.toLowerCase()}
+              </span>{" "}
+              — {current.hint.toLowerCase()}
             </p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
             <button
               type="button"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-[#15121d] font-semibold text-sm hover:bg-white/90 active:scale-[0.98] transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-[#15121d] font-semibold text-sm hover:bg-white/90 active:scale-[0.98] transition-all"
             >
               <span className="material-symbols-outlined text-[18px]">play_arrow</span>
-              Enter scene
+              Step inside
             </button>
             <span className="text-[11px] uppercase tracking-wider font-[var(--font-label)] text-white/40">
               Beta · 3D
@@ -51,14 +52,14 @@ export default function ScenePreview() {
         </div>
 
         {/* Right — canvas placeholder + SVG silhouettes */}
-        <div className="relative h-64 md:h-72 lg:h-80 m-3 rounded-2xl overflow-hidden border border-white/8">
-          {/* Background gradient */}
+        <div className="relative h-64 md:h-72 lg:h-80 m-3 rounded-2xl overflow-hidden">
+          {/* Background — lilac from above, candle-light from below */}
           <div
             aria-hidden
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse at 50% 35%, rgba(155,135,216,0.25), transparent 70%), linear-gradient(180deg, #100e16 0%, #06050a 100%)",
+                "radial-gradient(ellipse at 50% 30%, rgba(155,135,216,0.22), transparent 70%), radial-gradient(ellipse at 50% 110%, rgba(224,176,131,0.14), transparent 60%), linear-gradient(180deg, #131017 0%, #0b0910 100%)",
             }}
           />
           {/* Floor */}
@@ -82,8 +83,8 @@ export default function ScenePreview() {
             <motion.div
               initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="grid place-items-center w-16 h-16 rounded-full glass-strong border border-white/10"
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              className="grid place-items-center w-16 h-16 rounded-full glass-strong"
             >
               <span className="material-symbols-outlined text-[28px] text-white">
                 play_arrow
@@ -91,13 +92,13 @@ export default function ScenePreview() {
             </motion.div>
           </div>
 
-          {/* Loading caption */}
-          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/35 border border-white/10 backdrop-blur-md text-[10px] uppercase tracking-wider font-[var(--font-label)] font-semibold text-white/65">
-            Loading scene…
+          {/* Caption */}
+          <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/35 backdrop-blur-md text-[10px] uppercase tracking-wider font-[var(--font-label)] font-semibold text-white/65">
+            Setting the room…
           </div>
         </div>
       </div>
-    </GlassCard>
+    </div>
   );
 }
 
@@ -132,7 +133,7 @@ function SilhouetteCircle() {
           z={f.z}
         />
       ))}
-      {/* Floor highlight */}
+      {/* Floor highlight — candle-light warm */}
       <ellipse
         cx="50"
         cy="84"
@@ -143,7 +144,7 @@ function SilhouetteCircle() {
       />
       <defs>
         <radialGradient id="floor-glow">
-          <stop offset="0%" stopColor="#d8a3b8" stopOpacity="0.6" />
+          <stop offset="0%" stopColor="#e0b083" stopOpacity="0.6" />
           <stop offset="100%" stopColor="transparent" stopOpacity="0" />
         </radialGradient>
       </defs>
