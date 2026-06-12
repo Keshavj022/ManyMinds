@@ -1,0 +1,37 @@
+# Fly.io config for the ManyMinds backend.
+#
+# `app` must be globally unique across Fly. If "manyminds-api" is taken,
+# `fly launch` will offer to pick another name and rewrite this line — or
+# change it yourself to something like "manyminds-api-<yourname>".
+app = "manyminds-api"
+
+# Put this close to your Azure Cosmos region to cut latency.
+# Examples: iad = US East (Virginia), lhr = London, sin = Singapore, bom = Mumbai.
+primary_region = "iad"
+
+[build]
+  # Fly builds from the Dockerfile in this folder.
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  # Scale to zero when idle to keep cost ~nil. There's a cold start (~a few
+  # seconds) on the first request after a nap. For an always-warm demo link,
+  # set min_machines_running = 1 (small steady cost).
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  # Health probe — Fly waits for /healthz before routing traffic.
+  # If `fly launch` ever complains about this block, you can safely delete it.
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "get"
+    path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"   # bump to "1gb" if the app OOMs while booting the Azure SDKs
