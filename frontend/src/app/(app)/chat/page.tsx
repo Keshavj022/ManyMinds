@@ -119,6 +119,7 @@ function ChatRoom() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const stagingRunRef = useRef(0);
   const bootedSidRef = useRef<string | null>(null);
+  const bootRunRef = useRef(0);
   const voiceToastShownRef = useRef(false);
 
   const setStatuses = useCallback(
@@ -158,10 +159,15 @@ function ChatRoom() {
   }, [feed, typingMember, awaiting]);
 
   // Session boot — ?session= in the URL wins, then localStorage, then a
-  // fresh one. History loads right after.
+  // fresh one. History loads BEFORE we sync the URL, so the in-flight run is
+  // never cut short by its own router.replace. A monotonic run id owns the
+  // loading flag so it always clears, even across re-entries.
   useEffect(() => {
+    // Already booted this exact session — nothing to do (loading is off).
     if (urlSession && urlSession === bootedSidRef.current) return;
+    const myRun = ++bootRunRef.current;
     let cancelled = false;
+    const isStale = () => cancelled || bootRunRef.current !== myRun;
 
     async function boot() {
       setSessionLoading(true);
@@ -193,7 +199,7 @@ function ChatRoom() {
           sid = created.id;
         }
 
-        if (cancelled) return;
+        if (isStale()) return;
         bootedSidRef.current = sid;
         setSessionId(sid);
         try {
@@ -201,14 +207,13 @@ function ChatRoom() {
         } catch {
           /* ignore */
         }
-        if (urlSession !== sid) {
-          router.replace(`/chat?session=${sid}`, { scroll: false });
-        }
 
+        // Load history FIRST, then sync the URL last — so the router.replace
+        // below can't re-trigger this effect mid-fetch and orphan the spinner.
         const history = await api<ApiChatMessage[]>(
           `/api/v1/chat/sessions/${sid}/messages?limit=100`,
         );
-        if (cancelled) return;
+        if (isStale()) return;
         setFeed(history.map((m) => backendToUi(m, userName)));
         const lastMember = [...history]
           .reverse()
@@ -216,15 +221,21 @@ function ChatRoom() {
         if (lastMember && isKnownMemberSlug(lastMember.member_slug)) {
           setWhoIsTalking(lastMember.member_slug);
         }
+
+        if (urlSession !== sid) {
+          router.replace(`/chat?session=${sid}`, { scroll: false });
+        }
       } catch (err) {
-        if (cancelled) return;
+        if (isStale()) return;
         setToast(
           err instanceof ApiError
             ? `Couldn't open the room: ${err.message}`
             : "Couldn't open the room. Is the backend awake?",
         );
       } finally {
-        if (!cancelled) setSessionLoading(false);
+        // Only the latest run owns the spinner. Early-returns from a superseded
+        // run must never leave it spinning forever.
+        if (bootRunRef.current === myRun) setSessionLoading(false);
       }
     }
 

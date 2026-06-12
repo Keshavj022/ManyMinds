@@ -39,11 +39,11 @@ const TILES: ReadonlyArray<Tile> = [
     member: "nova",
   },
   {
-    title: "See what we remember",
-    hint: "Your memory wall — every thread we're holding.",
-    verb: "Look",
-    href: "/memory",
-    icon: "hub",
+    title: "Your profile",
+    hint: "Your name, your traits, how we read you.",
+    verb: "View",
+    href: "/profile",
+    icon: "account_circle",
     member: "echo",
   },
 ];

@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ReactElement, useEffect, useState } from "react";
+import { ReactElement } from "react";
 import GlassCard from "@/components/ui/GlassCard";
 import MemberAvatar from "@/components/ui/MemberAvatar";
 import GradientOrb from "@/components/ui/GradientOrb";
 import { councilColors, CouncilMemberId } from "@/lib/design-tokens";
-import { gameHistorySummary, GameResultRecord, loadGameHistory } from "@/lib/games/storage";
 
 // ---------- Mini previews ----------
 
@@ -130,7 +129,7 @@ const GAMES: GameDef[] = [
     preview: ChessPreview,
     haloMember: "aria",
     hosts: ["aria", "rex"],
-    hostLabel: "Aria vs Rex",
+    hostLabel: "Aria & Rex",
   },
   {
     id: "ludo",
@@ -140,7 +139,7 @@ const GAMES: GameDef[] = [
     preview: LudoPreview,
     haloMember: "nova",
     hosts: ["nova"],
-    hostLabel: "Nova's chaos",
+    hostLabel: "Nova's table",
   },
   {
     id: "truth-or-dare",
@@ -154,24 +153,37 @@ const GAMES: GameDef[] = [
   },
 ];
 
+// ---------- "How game night works" — honest intro, no fabricated stats ----------
+
+const HOW_IT_WORKS: ReadonlyArray<{
+  icon: string;
+  title: string;
+  body: string;
+  member: CouncilMemberId;
+}> = [
+  {
+    icon: "groups",
+    title: "Play with the council, not against them",
+    body: "Pull up a chair and they'll fill the others. You're at the table together — they'll cheer, scheme, and absolutely gloat in character.",
+    member: "aria",
+  },
+  {
+    icon: "diversity_3",
+    title: "Everyone shows up as themselves",
+    body: "Aria plays the long game, Rex plays for the story, Nova rewrites the rules mid-round. The same board feels different depending on who's across from you.",
+    member: "nova",
+  },
+  {
+    icon: "favorite",
+    title: "It's the hangout, not the scoreboard",
+    body: "Pick a game, settle in, see where the evening goes. No rankings to climb here — just the five of them, ready whenever you are.",
+    member: "echo",
+  },
+];
+
 // ---------- Page ----------
 
 export default function GamesHub() {
-  const [history, setHistory] = useState<GameResultRecord[]>([]);
-  const [summary, setSummary] = useState<{
-    total: number;
-    wins: number;
-    losses: number;
-    draws: number;
-    streak: number;
-    last?: GameResultRecord | undefined;
-  }>({ total: 0, wins: 0, losses: 0, draws: 0, streak: 0, last: undefined });
-
-  useEffect(() => {
-    setHistory(loadGameHistory());
-    setSummary(gameHistorySummary());
-  }, []);
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -190,11 +202,12 @@ export default function GamesHub() {
             </p>
           </div>
           <h1 className="font-[var(--font-headline)] text-4xl font-bold text-white tracking-tight">
-            Pick a game.
+            Pull up a chair.
           </h1>
           <p className="text-white/55 mt-3 max-w-xl leading-relaxed">
-            They keep score, they talk a respectful amount of trash, and yes —
-            they remember who won last time.
+            Pick a game and the council fills the table around you. You play{" "}
+            <span className="text-white/80">with</span> them, not against the
+            machine — each one a friend with their own way of playing.
           </p>
         </div>
       </div>
@@ -254,7 +267,7 @@ export default function GamesHub() {
 
                   <div className="mt-7 z-10">
                     <span className="inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-tight px-5 py-2.5 text-sm bg-[var(--color-accent)] text-[#15121d] shadow-[0_4px_14px_-4px_rgba(155,135,216,0.5)] transition-all duration-200 group-hover:bg-[var(--color-accent-strong)] group-hover:shadow-[0_8px_24px_-6px_rgba(155,135,216,0.6)]">
-                      Play
+                      Sit down
                       <span className="material-symbols-outlined text-[16px] transition-transform duration-200 group-hover:translate-x-0.5">
                         arrow_forward
                       </span>
@@ -267,85 +280,37 @@ export default function GamesHub() {
         })}
       </div>
 
-      {/* SCOREBOARD */}
+      {/* HOW GAME NIGHT WORKS — honest framing, no stats */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        transition={{ delay: 0.35 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
-        <StatCard label="Games played" value={String(summary.total)} />
-        <GlassCard variant="soft" className="rounded-2xl p-5">
-          <div className="text-[11px] uppercase tracking-[0.32em] text-white/45 font-[var(--font-label)] font-semibold">
-            Wins · losses · draws
-          </div>
-          <div className="text-2xl font-bold text-white font-[var(--font-headline)] mt-1.5">
-            <span className="text-[#7fb5d4]">{summary.wins}</span>
-            <span className="text-white/30 mx-1">·</span>
-            <span className="text-[#d8a3b8]">{summary.losses}</span>
-            <span className="text-white/30 mx-1">·</span>
-            <span className="text-white/60">{summary.draws}</span>
-          </div>
-        </GlassCard>
-        <GlassCard variant="soft" className="rounded-2xl p-5">
-          <div className="text-[11px] uppercase tracking-[0.32em] text-white/45 font-[var(--font-label)] font-semibold">
-            Streak
-          </div>
-          <div
-            className="text-2xl font-bold font-[var(--font-headline)] mt-1.5"
-            style={{
-              color:
-                summary.streak > 0
-                  ? "var(--color-warm)"
-                  : summary.streak < 0
-                    ? "#d8a3b8"
-                    : "#ffffff",
-            }}
-          >
-            {summary.streak > 0 ? `+${summary.streak}` : summary.streak === 0 ? "—" : summary.streak}
-          </div>
-        </GlassCard>
-        <GlassCard variant="soft" className="rounded-2xl p-5">
-          <div className="text-[11px] uppercase tracking-[0.32em] text-white/45 font-[var(--font-label)] font-semibold">
-            Last played
-          </div>
-          <div className="text-sm font-bold text-white mt-1.5 truncate font-[var(--font-headline)]">
-            {summary.last ? labelGame(summary.last.game) : "Nothing yet"}
-          </div>
-          {summary.last && (
-            <div className="text-[11px] text-white/45 mt-0.5">
-              {formatRelative(summary.last.ts)} · {summary.last.outcome}
-            </div>
-          )}
-        </GlassCard>
+        {HOW_IT_WORKS.map((item) => {
+          const c = councilColors[item.member];
+          return (
+            <GlassCard key={item.title} variant="soft" className="rounded-2xl p-6">
+              <span
+                className="inline-grid place-items-center w-11 h-11 rounded-2xl mb-4"
+                style={{ background: c.soft, color: c.hex }}
+              >
+                <span className="material-symbols-outlined text-[22px]">
+                  {item.icon}
+                </span>
+              </span>
+              <h3 className="text-white font-bold font-[var(--font-headline)] text-base leading-snug">
+                {item.title}
+              </h3>
+              <p className="text-white/50 text-sm leading-relaxed mt-2">
+                {item.body}
+              </p>
+            </GlassCard>
+          );
+        })}
       </motion.div>
 
-      {/* RECENT MATCHES */}
-      {history.length > 0 && (
-        <GlassCard variant="default" className="rounded-3xl p-7">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-[var(--font-headline)] text-lg font-bold text-white">
-              Lately at the table
-            </h2>
-            <span className="text-[11px] text-white/40 uppercase tracking-[0.32em] font-[var(--font-label)]">
-              last 5
-            </span>
-          </div>
-          <ul className="divide-y divide-white/5">
-            {history.map((h) => (
-              <li key={h.id} className="py-3 flex items-center justify-between gap-4 text-sm">
-                <span className="text-white/85 font-bold shrink-0">{labelGame(h.game)}</span>
-                <span className="text-white/60 truncate text-right flex-1">{h.detail ?? h.outcome}</span>
-                <span className="text-[11px] text-white/40 w-20 text-right shrink-0">
-                  {formatRelative(h.ts)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </GlassCard>
-      )}
-
-      {/* COMING SOON */}
+      {/* COMING SOON — a forward-looking note, not a fabricated stat */}
       <GlassCard variant="soft" className="rounded-3xl p-7 border-dashed text-center">
         <span className="material-symbols-outlined text-white/35 text-3xl">style</span>
         <h3 className="text-white font-bold font-[var(--font-headline)] mt-3">Poker, soon™</h3>
@@ -356,36 +321,4 @@ export default function GamesHub() {
       </GlassCard>
     </motion.div>
   );
-}
-
-// ---------- helpers ----------
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <GlassCard variant="soft" className="rounded-2xl p-5">
-      <div className="text-[11px] uppercase tracking-[0.32em] text-white/45 font-[var(--font-label)] font-semibold">
-        {label}
-      </div>
-      <div className="text-2xl font-bold text-white font-[var(--font-headline)] mt-1.5">
-        {value}
-      </div>
-    </GlassCard>
-  );
-}
-
-function labelGame(g: "chess" | "truth-or-dare" | "ludo"): string {
-  if (g === "chess") return "Chess";
-  if (g === "ludo") return "Ludo";
-  return "Truth or Dare";
-}
-
-function formatRelative(ts: number): string {
-  const diff = Date.now() - ts;
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
 }

@@ -54,17 +54,38 @@ async def speak(
             detail="Voice synthesis is not configured on this server",
         )
 
+    # Pull the FIRST chunk before we commit to a 200 response. ElevenLabs
+    # surfaces auth/quota errors (e.g. 401 "free tier disabled", 429) on the
+    # very first read — if we streamed blindly we'd send a 200 with an empty
+    # body and the browser would just play silence with no way to know it
+    # failed. Probing here lets us return an honest 503 so the UI can show the
+    # "voices are taking a break" fallback.
+    agen = voice.synthesize_stream(text=body.text, member_slug=member_slug)
+    try:
+        first_chunk = await agen.__anext__()
+    except StopAsyncIteration:
+        first_chunk = b""
+    except VoiceUnavailable as exc:
+        await agen.aclose()
+        logger.warning("Voice synthesis unavailable for %s: %s", member_slug, exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Voice synthesis is temporarily unavailable",
+        ) from exc
+
     async def stream() -> Any:
         try:
-            async for chunk in voice.synthesize_stream(
-                text=body.text, member_slug=member_slug
-            ):
+            if first_chunk:
+                yield first_chunk
+            async for chunk in agen:
                 yield chunk
         except VoiceUnavailable as exc:
             # Stream already started — we can't change status code mid-stream;
             # log and end cleanly. The frontend treats truncated audio as a
             # synthesis failure.
             logger.warning("Voice stream aborted: %s", exc)
+        finally:
+            await agen.aclose()
 
     return StreamingResponse(
         stream(),

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { councilColors } from "@/lib/design-tokens";
 import { useEnvironment } from "./EnvironmentProvider";
 
@@ -38,13 +39,13 @@ export default function ScenePreview() {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <button
-              type="button"
+            <Link
+              href="/chat"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-[#15121d] font-semibold text-sm hover:bg-white/90 active:scale-[0.98] transition-all"
             >
               <span className="material-symbols-outlined text-[18px]">play_arrow</span>
               Step inside
-            </button>
+            </Link>
             <span className="text-[11px] uppercase tracking-wider font-[var(--font-label)] text-white/40">
               Beta · 3D
             </span>

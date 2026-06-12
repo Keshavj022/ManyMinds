@@ -14,27 +14,62 @@ interface EmptyStateProps {
 
 export default function EmptyState({ onPick, member = null }: EmptyStateProps) {
   const solo = member ? COUNCIL_MEMBERS.find((m) => m.id === member) : null;
+  const soloHex = solo ? councilColors[solo.id].hex : null;
+  const soloSoft = solo ? councilColors[solo.id].soft : null;
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center text-center px-8 py-12">
+    <div className="relative flex-1 flex flex-col items-center justify-center text-center px-8 py-12">
+      {/* Warm lamp-light halo behind the friends — the lounge glow. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-0"
+        style={{
+          background: soloSoft
+            ? `radial-gradient(ellipse 45% 40% at 50% 38%, ${soloSoft}, transparent 70%)`
+            : "radial-gradient(ellipse 55% 42% at 50% 38%, rgba(224,176,131,0.10), transparent 70%)",
+        }}
+      />
+
       <motion.div
         initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-7"
+        className="relative mb-7"
       >
         {solo ? (
-          <MemberAvatar id={solo.id} size="xl" status="online" className="animate-pulse-soft" />
+          <motion.span
+            animate={{ y: [0, -5, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            className="inline-block"
+          >
+            <MemberAvatar
+              id={solo.id}
+              size="xl"
+              status="online"
+              className="animate-pulse-soft"
+            />
+          </motion.span>
         ) : (
           <div className="flex -space-x-3.5">
             {COUNCIL_MEMBERS.map((m, i) => (
               <motion.span
                 key={m.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.08 * i, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{
+                  opacity: 1,
+                  y: [0, i % 2 === 0 ? -4 : -7, 0],
+                }}
+                transition={{
+                  opacity: { duration: 0.5, delay: 0.08 * i },
+                  y: {
+                    duration: 4.5 + i * 0.4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0.12 * i,
+                  },
+                }}
               >
-                <MemberAvatar id={m.id} size="lg" className="animate-pulse-soft" />
+                <MemberAvatar id={m.id} size="lg" />
               </motion.span>
             ))}
           </div>
@@ -45,7 +80,7 @@ export default function EmptyState({ onPick, member = null }: EmptyStateProps) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.15 }}
-        className="text-3xl md:text-4xl font-[var(--font-headline)] font-bold aurora-text tracking-tight"
+        className="relative text-3xl md:text-4xl font-[var(--font-headline)] font-bold aurora-text tracking-tight"
       >
         {solo ? `Just you and ${solo.name}.` : "Hey, you made it."}
       </motion.h2>
@@ -54,17 +89,17 @@ export default function EmptyState({ onPick, member = null }: EmptyStateProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.25 }}
-        className="mt-3 text-sm text-white/55 max-w-md leading-relaxed"
+        className="relative mt-3 text-sm text-white/55 max-w-md leading-relaxed"
       >
         {solo ? (
           <span>
-            <span style={{ color: councilColors[solo.id].hex }} className="font-semibold">
+            <span style={{ color: soloHex ?? undefined }} className="font-semibold">
               &ldquo;{solo.signatureGreeting}&rdquo;
             </span>{" "}
             — the others can&rsquo;t hear you in here.
           </span>
         ) : (
-          "The five of us are already here. Say anything — we'll take it from there."
+          "The five of us are already here, settled in. Say anything — we'll take it from there."
         )}
       </motion.p>
 
@@ -72,20 +107,33 @@ export default function EmptyState({ onPick, member = null }: EmptyStateProps) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.35 }}
-        className="mt-8 flex flex-wrap justify-center gap-2 max-w-lg"
+        className="relative mt-8 flex flex-wrap justify-center gap-2 max-w-lg"
       >
-        {STARTER_PROMPTS.map((p) => (
-          <button
+        {STARTER_PROMPTS.map((p, i) => (
+          <motion.button
             key={p.label}
             type="button"
             onClick={() => onPick(p.label)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold border border-white/[0.06] bg-white/[0.04] text-white/85 hover:text-white hover:bg-white/[0.07] hover:scale-[1.03] hover:-translate-y-0.5 transition-all"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.42 + i * 0.06 }}
+            whileHover={{ y: -2, scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold border border-white/[0.07] bg-white/[0.04] text-white/85 hover:text-white hover:bg-white/[0.08] hover:border-white/15 transition-colors"
+            style={
+              solo
+                ? { borderColor: `${soloHex}33` }
+                : undefined
+            }
           >
-            <span className="material-symbols-outlined text-[16px] text-white/55">
+            <span
+              className="material-symbols-outlined text-[16px]"
+              style={{ color: soloHex ?? "rgba(255,255,255,0.5)" }}
+            >
               {p.icon}
             </span>
             {p.label}
-          </button>
+          </motion.button>
         ))}
       </motion.div>
     </div>

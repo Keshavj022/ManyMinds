@@ -23,6 +23,11 @@ import {
   TONE_OPTIONS,
   ToneOption,
 } from "@/components/config/types";
+import {
+  BoundaryToggle,
+  ConnectionPill,
+  type LoadState,
+} from "@/components/config/widgets";
 
 const TRAIT_ORDER: BigFiveDimension[] = [
   "openness",
@@ -40,6 +45,7 @@ export default function ConfigPage() {
     () => structuredCloneOrFallback(DEFAULT_CONFIGS),
   );
   const [memberMap, setMemberMap] = useState<Record<string, ApiMember>>({});
+  const [loadState, setLoadState] = useState<LoadState>("loading");
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
@@ -54,6 +60,7 @@ export default function ConfigPage() {
         const map: Record<string, ApiMember> = {};
         for (const m of members) map[m.slug] = m;
         setMemberMap(map);
+        setLoadState("ready");
 
         // Hydrate configs from server when available (tone + constraints).
         setConfigs((prev) => {
@@ -87,6 +94,7 @@ export default function ConfigPage() {
         });
       } catch (err) {
         if (cancelled) return;
+        setLoadState("error");
         setStatusMsg(
           err instanceof ApiError
             ? `Couldn't reach the council: ${err.message}`
@@ -189,18 +197,22 @@ export default function ConfigPage() {
     <div className="space-y-7 pb-6 max-w-6xl mx-auto">
       {/* Page header */}
       <header>
-        <div className="inline-flex items-center gap-2 mb-3">
-          <span className="h-px w-8 bg-gradient-to-r from-transparent to-white/40" />
-          <p className="text-[11px] tracking-[0.32em] uppercase font-[var(--font-label)] font-semibold text-white/55">
-            Your council
-          </p>
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <div className="inline-flex items-center gap-2">
+            <span className="h-px w-8 bg-gradient-to-r from-transparent to-white/40" />
+            <p className="text-[11px] tracking-[0.32em] uppercase font-[var(--font-label)] font-semibold text-white/55">
+              Your council
+            </p>
+          </div>
+          <ConnectionPill state={loadState} />
         </div>
         <h1 className="text-3xl md:text-4xl font-bold font-[var(--font-headline)] text-white tracking-tight">
           Tune your friends.
         </h1>
         <p className="mt-3 text-sm md:text-base text-white/55 max-w-2xl leading-relaxed">
           They&rsquo;ll still be themselves — you&rsquo;re just choosing how
-          loud, how warm, how challenging they get to be with you.
+          loud, how warm, how challenging they get to be with you. Every change
+          is kept with the council, so they remember it next time you talk.
         </p>
       </header>
 
@@ -450,47 +462,7 @@ export default function ConfigPage() {
   );
 }
 
-/* ----------------------------- helper widgets ------------------------------ */
-
-function BoundaryToggle({
-  active,
-  label,
-  hint,
-  color,
-  onToggle,
-}: {
-  active: boolean;
-  label: string;
-  hint: string;
-  color: string;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-pressed={active}
-      className="w-full flex items-center gap-4 p-3.5 pl-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] text-left transition-colors"
-    >
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white">{label}</p>
-        <p className="text-xs text-white/45 mt-0.5">{hint}</p>
-      </div>
-      <span
-        className="relative inline-flex w-11 h-6 rounded-full shrink-0 transition-colors"
-        style={{
-          background: active ? color : "rgba(255,255,255,0.08)",
-        }}
-      >
-        <motion.span
-          animate={{ x: active ? 22 : 2 }}
-          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-          className="absolute top-0.5 left-0 w-5 h-5 rounded-full bg-white shadow-md"
-        />
-      </span>
-    </button>
-  );
-}
+/* ------------------------------- helpers ----------------------------------- */
 
 function structuredCloneOrFallback<T>(input: T): T {
   if (typeof structuredClone === "function") return structuredClone(input);

@@ -3,13 +3,25 @@
 import { motion } from "framer-motion";
 import MemberAvatar from "@/components/ui/MemberAvatar";
 import { COUNCIL_MEMBERS, councilColors } from "@/lib/design-tokens";
-import type { DebateArgument } from "@/lib/debate-fixtures";
+import type {
+  DebateArgument,
+  DebateArgumentKind,
+} from "@/lib/debate-fixtures";
 import { SIDE } from "./palette";
 
 interface SpeechCardProps {
   arg: DebateArgument;
   isLatest?: boolean;
 }
+
+// A friendly word for each beat of the debate. "argument" needs no badge —
+// it's the default — so it returns null and the chip is skipped.
+const KIND_LABEL: Record<DebateArgumentKind, string | null> = {
+  opening: "Opening",
+  argument: null,
+  rebuttal: "Rebuttal",
+  closing: "Closing",
+};
 
 /**
  * One spoken argument — a glass speech card with the speaker's hue
@@ -21,6 +33,8 @@ export default function SpeechCard({ arg, isLatest }: SpeechCardProps) {
   const member = COUNCIL_MEMBERS.find((m) => m.id === arg.speakerId);
   const side = SIDE[arg.side];
   const fromRight = arg.side === "con";
+  const kindLabel = KIND_LABEL[arg.kind];
+  const isRebuttal = arg.kind === "rebuttal";
 
   return (
     <motion.div
@@ -71,6 +85,18 @@ export default function SpeechCard({ arg, isLatest }: SpeechCardProps) {
             >
               {side.label}
             </span>
+            {kindLabel && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border border-white/[0.08] text-white/65"
+              >
+                {isRebuttal && (
+                  <span className="material-symbols-outlined text-[12px] text-white/55">
+                    reply
+                  </span>
+                )}
+                {kindLabel}
+              </span>
+            )}
             <span className="text-[10px] uppercase tracking-wider text-white/35 font-[var(--font-label)]">
               round {arg.roundNumber}
             </span>

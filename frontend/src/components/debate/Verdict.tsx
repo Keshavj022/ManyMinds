@@ -23,6 +23,11 @@ export default function Verdict({ verdict, moderatorId, onReset }: VerdictProps)
   const mod = COUNCIL_MEMBERS.find((m) => m.id === moderatorId);
   const modColor = councilColors[moderatorId];
 
+  const proPct = toPct(verdict.proAverage);
+  const conPct = toPct(verdict.conAverage);
+  const lead: SideKey | null =
+    proPct > conPct ? "pro" : conPct > proPct ? "con" : null;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -50,13 +55,25 @@ export default function Verdict({ verdict, moderatorId, onReset }: VerdictProps)
         </div>
       </div>
 
+      <div className="mb-6">
+        <span className="text-[11px] tracking-[0.28em] uppercase text-white/45 font-[var(--font-label)]">
+          {lead ? "Edged it" : "Too close to call"}
+        </span>
+        <p
+          className="font-[var(--font-headline)] font-bold text-xl mt-1"
+          style={{ color: lead ? SIDE[lead].hex : "rgba(255,255,255,0.9)" }}
+        >
+          {lead ? `${SIDE[lead].label} carried the room` : "A genuine draw"}
+        </p>
+      </div>
+
       <p className="text-base text-white/90 leading-relaxed mb-7 max-w-prose">
         {verdict.summary}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-7">
-        <SideMeter side="pro" value={toPct(verdict.proAverage)} />
-        <SideMeter side="con" value={toPct(verdict.conAverage)} />
+        <SideMeter side="pro" value={proPct} leading={lead === "pro"} />
+        <SideMeter side="con" value={conPct} leading={lead === "con"} />
       </div>
 
       <AuroraButton
@@ -75,16 +92,32 @@ export default function Verdict({ verdict, moderatorId, onReset }: VerdictProps)
   );
 }
 
-function SideMeter({ side, value }: { side: SideKey; value: number }) {
+function SideMeter({
+  side,
+  value,
+  leading = false,
+}: {
+  side: SideKey;
+  value: number;
+  leading?: boolean;
+}) {
   const s = SIDE[side];
   const pct = Math.max(0, Math.min(100, value));
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+    <div
+      className="rounded-2xl border bg-white/[0.03] p-5 transition-colors"
+      style={{ borderColor: leading ? `${s.hex}40` : "rgba(255,255,255,0.06)" }}
+    >
       <div className="flex items-center justify-between mb-3">
         <span
-          className="text-[11px] font-bold uppercase tracking-[0.32em] font-[var(--font-label)]"
+          className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.32em] font-[var(--font-label)]"
           style={{ color: s.hex }}
         >
+          {leading && (
+            <span className="material-symbols-outlined text-[14px]">
+              trophy
+            </span>
+          )}
           {s.label}
         </span>
         <span className="text-2xl font-bold text-white font-[var(--font-headline)]">

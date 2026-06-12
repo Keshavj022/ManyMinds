@@ -69,13 +69,13 @@ export default function Composer({
   return (
     <div className="pt-3">
       <div
-        className="glass rounded-[28px] px-2 py-2 pl-5 flex items-end gap-2 transition-shadow focus-within:shadow-[0_0_0_2px_var(--composer-ring)]"
+        className="glass-warm rounded-[28px] px-2 py-2 pl-5 flex items-end gap-2 transition-shadow duration-300 focus-within:shadow-[0_0_0_2px_var(--composer-ring)]"
         style={
           {
             "--composer-ring": ringColor,
             ...(listening
               ? {
-                  boxShadow: `0 0 0 2px ${accent?.hex ?? "#d8a3b8"}66, 0 0 28px ${accent?.soft ?? "rgba(216,163,184,0.25)"}`,
+                  boxShadow: `0 0 0 2px ${accent?.hex ?? "#d8a3b8"}66, 0 0 32px ${accent?.soft ?? "rgba(216,163,184,0.28)"}`,
                 }
               : null),
           } as React.CSSProperties
@@ -106,9 +106,9 @@ export default function Composer({
           <button
             type="button"
             onClick={() => (listening ? stop() : start())}
-            className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-all ${
+            className={`relative w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-all duration-200 ${
               listening
-                ? "text-white animate-pulse-soft"
+                ? "text-white"
                 : "text-white/55 hover:text-white hover:bg-white/[0.06]"
             }`}
             style={
@@ -121,9 +121,21 @@ export default function Composer({
             }
             aria-label={listening ? "stop listening" : "speak instead of typing"}
             aria-pressed={listening}
+            title={listening ? "tap to stop" : "speak instead of typing"}
           >
+            {/* Listening halo — a soft expanding ring so it reads as "live". */}
+            {listening && (
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-full animate-ping"
+                style={{
+                  background: accent?.soft ?? "rgba(216,163,184,0.18)",
+                  opacity: 0.45,
+                }}
+              />
+            )}
             <span
-              className="material-symbols-outlined text-[20px]"
+              className="relative material-symbols-outlined text-[20px]"
               style={listening ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               mic
@@ -135,11 +147,11 @@ export default function Composer({
         <button
           type="button"
           onClick={onToggleVoice}
-          className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-all ${
+          className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-all duration-200 ${
             voiceEnabled
-              ? "text-[var(--color-warm)] bg-[var(--color-warm-soft)]"
+              ? "text-[var(--color-warm)] bg-[var(--color-warm-soft)] shadow-[0_0_16px_rgba(224,176,131,0.25)]"
               : "text-white/55 hover:text-white hover:bg-white/[0.06]"
-          }`}
+          } ${voiceUnavailable ? "opacity-60" : ""}`}
           aria-label={voiceEnabled ? "turn their voices off" : "hear them out loud"}
           aria-pressed={voiceEnabled}
           title={
@@ -162,9 +174,9 @@ export default function Composer({
           type="button"
           onClick={submit}
           disabled={!canSend}
-          className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-all ${
+          className={`group/send w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-all duration-200 ${
             canSend
-              ? "text-[#15121d] shadow-[0_0_18px_rgba(216,163,184,0.4)] hover:brightness-110 active:scale-95"
+              ? "text-[#15121d] hover:brightness-110 active:scale-95"
               : "bg-white/[0.05] text-white/30 cursor-not-allowed"
           }`}
           style={
@@ -173,13 +185,14 @@ export default function Composer({
                   background: accent
                     ? accent.hex
                     : "linear-gradient(135deg, #9b87d8 0%, #d8a3b8 100%)",
+                  boxShadow: `0 0 18px ${accent ? `${accent.hex}66` : "rgba(216,163,184,0.4)"}`,
                 }
               : undefined
           }
           aria-label="send"
         >
           <span
-            className="material-symbols-outlined text-[18px]"
+            className="material-symbols-outlined text-[18px] transition-transform duration-200 group-hover/send:translate-x-[1px] group-hover/send:-translate-y-[1px]"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
             send
@@ -188,8 +201,12 @@ export default function Composer({
       </div>
 
       <p className="mt-2 text-[10px] text-white/30 font-[var(--font-label)] tracking-[0.18em] uppercase text-center">
-        Enter to send · Shift+Enter for a new line
-        {supported ? " · tap the mic to talk" : ""}
+        {listening
+          ? "Listening — tap the mic again when you're done"
+          : target === "group"
+            ? "Enter to send · Shift+Enter for a new line"
+            : `One-on-one with ${targetMember?.name ?? target} · Enter to send`}
+        {!listening && supported ? " · tap the mic to talk" : ""}
       </p>
     </div>
   );

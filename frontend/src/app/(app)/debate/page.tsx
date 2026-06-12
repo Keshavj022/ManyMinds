@@ -12,7 +12,6 @@ import SpeechCard from "@/components/debate/SpeechCard";
 import TeamCards from "@/components/debate/TeamCards";
 import Verdict from "@/components/debate/Verdict";
 import {
-  ACTIVE_DEBATE,
   type DebateArgument,
   type DebateMotion,
 } from "@/lib/debate-fixtures";
@@ -70,6 +69,11 @@ const KNOWN_SLUGS: ReadonlyArray<CouncilMemberId> = [
   "echo",
 ];
 
+// Fallback roster — used only if the backend hasn't assigned sides yet.
+// Sage moderates by default, so the other four split two-and-two.
+const DEFAULT_PRO: ReadonlyArray<CouncilMemberId> = ["aria", "echo"];
+const DEFAULT_CON: ReadonlyArray<CouncilMemberId> = ["rex", "nova"];
+
 function toMemberId(slug: string | null | undefined): CouncilMemberId {
   if (slug && (KNOWN_SLUGS as ReadonlyArray<string>).includes(slug)) {
     return slug as CouncilMemberId;
@@ -97,6 +101,7 @@ function apiToMotion(d: ApiDebate): DebateMotion {
       text: a.content,
       strength: a.strength_score ?? 0.6,
       roundNumber: a.round_number,
+      kind: a.argument_type,
     }));
   const proAvg =
     args.filter((a) => a.side === "pro").reduce((s, a) => s + a.strength, 0) /
@@ -108,8 +113,8 @@ function apiToMotion(d: ApiDebate): DebateMotion {
     id: d.id,
     title: d.topic,
     topic: d.topic,
-    proMembers: proMembers.length > 0 ? proMembers : ACTIVE_DEBATE.proMembers,
-    conMembers: conMembers.length > 0 ? conMembers : ACTIVE_DEBATE.conMembers,
+    proMembers: proMembers.length > 0 ? proMembers : [...DEFAULT_PRO],
+    conMembers: conMembers.length > 0 ? conMembers : [...DEFAULT_CON],
     moderatorId: toMemberId(d.moderator_slug),
     rounds: d.total_rounds,
     arguments: args,
@@ -121,7 +126,7 @@ function apiToMotion(d: ApiDebate): DebateMotion {
             : conAvg > proAvg
               ? "The Against side carried the room by a measurable edge."
               : "A genuine draw — both sides made their case."
-          : ACTIVE_DEBATE.verdict.summary,
+          : "Still going. Nobody's called it yet.",
       proAverage: Math.round(proAvg * 100),
       conAverage: Math.round(conAvg * 100),
     },

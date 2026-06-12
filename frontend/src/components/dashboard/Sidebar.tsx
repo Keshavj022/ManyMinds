@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { COUNCIL_MEMBERS, councilColors } from "@/lib/design-tokens";
 import MemberAvatar from "@/components/ui/MemberAvatar";
 import { NAV_ITEMS, NavItem } from "./nav-config";
-import { STORAGE_KEYS } from "@/lib/onboarding";
+import { useAuth } from "@/lib/auth-context";
 
 interface SidebarProps {
   /** When true the sidebar renders as an overlay drawer (mobile). */
@@ -177,95 +177,47 @@ function SidebarLink({
   );
 }
 
-/* ------------------------------- The room ----------------------------------- */
+/* ------------------------------- Your council -------------------------------- */
 
-const ACTIVITY_FLAVOURS: Record<string, string> = {
-  aria: "is reading",
-  rex: "is restless",
-  sage: "is mapping",
-  nova: "is sketching",
-  echo: "is here",
-};
-
+/**
+ * A quiet, functional council strip — five avatars that double as a shortcut
+ * into the room. No fabricated "is reading / is restless" activity (the
+ * council isn't actually doing anything between your visits) — just an honest,
+ * one-tap way back into chat.
+ */
 function TheRoom() {
   return (
     <div className="px-5 pb-3">
       <div className="flex items-center gap-2.5 mb-3.5 px-1">
         <span className="text-[11px] uppercase tracking-[0.32em] font-[var(--font-label)] font-semibold text-white/40">
-          The room
+          Your council
         </span>
         <span className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
       </div>
-      <div className="flex items-center justify-between px-1">
-        {COUNCIL_MEMBERS.map((m, i) => (
-          <RoomDot
-            key={m.id}
-            id={m.id}
-            name={m.name}
-            role={m.role}
-            activity={ACTIVITY_FLAVOURS[m.id] ?? "is here"}
-            delay={i}
-          />
-        ))}
-      </div>
-      <p className="mt-3.5 px-1 text-[11px] text-white/40">
-        Everyone&rsquo;s here. Come say hi.
-      </p>
-    </div>
-  );
-}
-
-function RoomDot({
-  id,
-  name,
-  role,
-  activity,
-  delay,
-}: {
-  id: keyof typeof councilColors;
-  name: string;
-  role: string;
-  activity: string;
-  delay: number;
-}) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: delay * 0.08, duration: 0.4 }}
-        className="animate-pulse-soft"
-        style={{ animationDelay: `${delay * 0.7}s` }}
+      <Link
+        href="/chat"
+        className="group flex items-center gap-3 px-2.5 py-2 rounded-2xl hover:bg-[rgba(224,176,131,0.05)] transition-colors"
       >
-        <MemberAvatar id={id} size="sm" status="online" glow />
-      </motion.div>
-      <AnimatePresence>
-        {hovered && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.96 }}
-            transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-30 whitespace-nowrap pointer-events-none"
-          >
-            <div className="glass-strong rounded-xl px-3 py-2 text-[11px] leading-tight">
-              <div className="font-bold text-white">{name}</div>
-              <div className="text-white/55 text-[10px] uppercase tracking-wider font-[var(--font-label)]">
-                {role}
-              </div>
-              <div className="text-white/70 mt-1">
-                <span style={{ color: councilColors[id].hex }}>{name}</span>{" "}
-                {activity}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <div className="flex -space-x-2.5">
+          {COUNCIL_MEMBERS.map((m, i) => (
+            <motion.span
+              key={m.id}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06, duration: 0.35 }}
+              className="ring-2 ring-[#14101a] rounded-full"
+            >
+              <MemberAvatar id={m.id} size="sm" glow={false} />
+            </motion.span>
+          ))}
+        </div>
+      </Link>
+      <p className="mt-2.5 px-2.5 text-[11px] text-white/40 group-hover:text-white/55">
+        All five, one room.{" "}
+        <Link href="/chat" className="text-white/60 hover:text-white">
+          Say hi&nbsp;→
+        </Link>
+      </p>
     </div>
   );
 }
@@ -274,20 +226,14 @@ function RoomDot({
 
 function ProfileChip() {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("Friend");
   const rootRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const { user, logout } = useAuth();
 
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEYS.profile);
-      if (raw) {
-        const parsed = JSON.parse(raw) as { name?: string };
-        if (parsed.name) setName(parsed.name);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
+  // Identity from the authenticated session — no fabricated tier/labels.
+  const handle = user?.username || user?.email?.split("@")[0] || "You";
+  const name = handle.charAt(0).toUpperCase() + handle.slice(1);
+  const email = user?.email ?? "Signed in";
 
   // Close popover on outside click
   useEffect(() => {
@@ -300,11 +246,17 @@ function ProfileChip() {
   }, [open]);
 
   const initials = name
-    .split(" ")
+    .split(/[\s._-]+/)
     .filter(Boolean)
     .slice(0, 2)
     .map((s) => s.charAt(0).toUpperCase())
     .join("");
+
+  const handleSignOut = async () => {
+    setOpen(false);
+    await logout();
+    router.replace("/login");
+  };
 
   return (
     <div ref={rootRef} className="relative p-4 pt-3">
@@ -319,7 +271,7 @@ function ProfileChip() {
         className="w-full flex items-center gap-3 p-2 rounded-2xl hover:bg-[rgba(224,176,131,0.05)] transition-colors text-left"
       >
         <div
-          className="w-10 h-10 rounded-full grid place-items-center font-semibold text-sm text-[#1a1620]"
+          className="w-10 h-10 rounded-full grid place-items-center font-semibold text-sm text-[#1a1620] shrink-0"
           style={{
             background: "linear-gradient(135deg, #9b87d8, #d8a3b8)",
             boxShadow: "0 0 16px rgba(155,135,216,0.22)",
@@ -329,12 +281,10 @@ function ProfileChip() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">{name}</p>
-          <p className="text-[11px] text-white/45 uppercase tracking-wider font-[var(--font-label)]">
-            Pioneer Tier
-          </p>
+          <p className="text-[11px] text-white/45 truncate">{email}</p>
         </div>
         <span className="material-symbols-outlined text-white/45 text-[20px]">
-          settings
+          {open ? "expand_more" : "expand_less"}
         </span>
       </button>
 
@@ -347,9 +297,28 @@ function ProfileChip() {
             transition={{ duration: 0.15 }}
             className="absolute left-4 right-4 bottom-[5.5rem] z-50 glass-strong rounded-2xl p-1.5"
           >
-            <PopoverItem icon="edit" label="Edit profile" />
-            <PopoverItem icon="groups" label="Switch council" />
-            <PopoverItem icon="logout" label="Sign out" tone="danger" />
+            <PopoverItem
+              icon="account_circle"
+              label="Your profile"
+              onClick={() => {
+                setOpen(false);
+                router.push("/profile");
+              }}
+            />
+            <PopoverItem
+              icon="tune"
+              label="Tune the council"
+              onClick={() => {
+                setOpen(false);
+                router.push("/config");
+              }}
+            />
+            <PopoverItem
+              icon="logout"
+              label="Sign out"
+              tone="danger"
+              onClick={() => void handleSignOut()}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -361,14 +330,17 @@ function PopoverItem({
   icon,
   label,
   tone = "default",
+  onClick,
 }: {
   icon: string;
   label: string;
   tone?: "default" | "danger";
+  onClick?: () => void;
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/[0.06] transition-colors text-sm text-left"
       style={{ color: tone === "danger" ? "#f87171" : "rgba(255,255,255,0.85)" }}
     >

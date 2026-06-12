@@ -28,6 +28,7 @@ from app.schemas.onboarding import (
     DemographicsRequest,
     DemographicsResponse,
     PersonalityProfile,
+    ProfileResponse,
     QuizResult,
     QuizSubmission,
 )
@@ -222,3 +223,52 @@ async def status(user: dict[str, Any] = Depends(get_current_user)) -> dict[str, 
         "onboarding_step": user.get("onboarding_step", 0),
         "complete": user.get("onboarding_step", 0) >= 2,
     }
+
+
+# ---------------------------------------------------------------------------
+# Profile — read back stored demographics + personality
+# ---------------------------------------------------------------------------
+@router.get("/profile", response_model=ProfileResponse)
+async def get_profile(
+    user: dict[str, Any] = Depends(get_current_user),
+) -> ProfileResponse:
+    """Everything we have on the signed-in user, for the Profile page.
+
+    Demographics live in the `userProfile` doc and personality in the
+    `personalityProfile` doc (see module docstring). Both are optional — a user
+    who only finished phase 1 has no personality yet, and vice-versa.
+    """
+    user_id = str(user["id"])
+    step = int(user.get("onboarding_step", 0) or 0)
+    base = ProfileResponse(
+        email=user.get("email"),
+        username=user.get("username"),
+        preferred_language="en",
+        onboarding_step=step,
+    )
+
+    pool = get_pool()
+    if pool is None:
+        return base
+
+    profile_doc = await read_item("users", f"profile-{user_id}", user_id)
+    if profile_doc:
+        base.full_name = profile_doc.get("fullName")
+        base.date_of_birth = profile_doc.get("dateOfBirth")
+        base.gender = profile_doc.get("gender")
+        base.location = profile_doc.get("location")
+        base.preferred_language = profile_doc.get("preferredLanguage") or "en"
+        base.bio = profile_doc.get("bio")
+
+    personality_doc = await read_item("users", f"personality-{user_id}", user_id)
+    if personality_doc:
+        base.personality = PersonalityProfile(
+            openness=int(personality_doc.get("openness", 50)),
+            conscientiousness=int(personality_doc.get("conscientiousness", 50)),
+            extraversion=int(personality_doc.get("extraversion", 50)),
+            agreeableness=int(personality_doc.get("agreeableness", 50)),
+            neuroticism=int(personality_doc.get("neuroticism", 50)),
+            dominant_trait=personality_doc.get("dominantTrait"),
+        )
+
+    return base

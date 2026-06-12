@@ -44,8 +44,11 @@ export default function ScenePane({
         {/* mood badge */}
         <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/45 backdrop-blur-md border border-white/10 text-white/80">
           <span
-            className="w-1.5 h-1.5 rounded-full animate-pulse"
-            style={{ background: "#7fb5d4" }}
+            className="w-1.5 h-1.5 rounded-full animate-pulse-soft"
+            style={{
+              background: "var(--color-warm)",
+              boxShadow: "0 0 8px var(--color-warm)",
+            }}
           />
           {env.name} · {env.mood}
         </div>

@@ -59,3 +59,21 @@ class QuizResult(APIModel):
     profile: PersonalityProfile
     onboarding_step: int
     council_seeded: bool
+
+
+class ProfileResponse(APIModel):
+    """Everything we know about a user — demographics + personality — read
+    back from storage for the Profile page. Any field may be null if the user
+    skipped it or hasn't reached that onboarding phase yet."""
+
+    email: str | None = None
+    username: str | None = None
+    full_name: str | None = None
+    # Stored as an ISO-8601 string in Cosmos; surfaced as-is.
+    date_of_birth: str | None = None
+    gender: str | None = None
+    location: str | None = None
+    preferred_language: str | None = None
+    bio: str | None = None
+    personality: PersonalityProfile | None = None
+    onboarding_step: int = 0

@@ -232,3 +232,54 @@ export interface QuizResult {
   onboarding_step: number;
   council_seeded: boolean;
 }
+
+/** GET /api/v1/onboarding/profile — real stored demographics + personality. */
+export interface ProfileData {
+  email: string | null;
+  username: string | null;
+  full_name: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  location: string | null;
+  preferred_language: string | null;
+  bio: string | null;
+  personality: PersonalityProfile | null;
+  onboarding_step: number;
+}
+
+// ---------------------------------------------------------------------------
+// Memory graph (GET /api/v1/memory/graph) — only ever real Neo4j data, may be
+// legitimately empty for a new account.
+// ---------------------------------------------------------------------------
+
+export type GraphNodeKind =
+  | "topic"
+  | "entity"
+  | "emotion"
+  | "event"
+  | "person"
+  | "preference";
+
+export interface ApiGraphNode {
+  id: string;
+  label: string;
+  kind: GraphNodeKind;
+  weight: number;
+  color: string | null;
+  metadata: Record<string, unknown>;
+  last_referenced: string | null;
+}
+
+export interface ApiGraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  kind: string;
+  weight: number;
+}
+
+export interface GraphResponse {
+  nodes: ApiGraphNode[];
+  edges: ApiGraphEdge[];
+  generated_at: string;
+}

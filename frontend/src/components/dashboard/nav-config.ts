@@ -49,20 +49,20 @@ export const NAV_ITEMS: ReadonlyArray<NavItem> = [
     hint: "Play with the council, not against them.",
   },
   {
-    name: "Memory Graph",
-    shortName: "Memory",
-    href: "/memory",
-    icon: "hub",
-    member: "echo",
-    hint: "Everything they remember about you.",
-  },
-  {
     name: "Council Config",
     shortName: "Tune",
     href: "/config",
     icon: "tune",
     member: "sage",
     hint: "Fine-tune how each friend speaks.",
+  },
+  {
+    name: "Your Profile",
+    shortName: "You",
+    href: "/profile",
+    icon: "account_circle",
+    member: "echo",
+    hint: "You, and everything they remember.",
   },
 ];
 

@@ -27,9 +27,18 @@ type FetchState =
   | { phase: "error" }
   | { phase: "ready"; layout: MemoryLayout };
 
-export default function MemoryPage() {
+/**
+ * "What they remember" — the user's honest Neo4j knowledge graph, lifted from
+ * the retired /memory page into a reusable profile section. Fetches
+ * /api/v1/memory/graph itself and shows the same loading / error / empty walls.
+ * A brand-new account correctly lands on the honest "Nothing on the wall yet"
+ * state — we never fabricate nodes.
+ */
+export default function MemoryGraphSection() {
   const [state, setState] = useState<FetchState>({ phase: "loading" });
-  const [hiddenKinds, setHiddenKinds] = useState<ReadonlySet<NodeKind>>(new Set());
+  const [hiddenKinds, setHiddenKinds] = useState<ReadonlySet<NodeKind>>(
+    new Set(),
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -108,20 +117,22 @@ export default function MemoryPage() {
   const threadCount = visibleEdges.filter((e) => !e.anchor).length;
 
   return (
-    <div className="h-[calc(100dvh-12rem)] lg:h-[calc(100dvh-9rem)] min-h-[560px] flex flex-col">
+    <section className="space-y-4">
+      <SectionHeading />
+
       <GlassCard
         variant="strong"
-        className="rounded-3xl flex-1 flex flex-col relative overflow-hidden"
+        className="rounded-3xl relative overflow-hidden flex flex-col h-[clamp(520px,68vh,720px)]"
       >
         {/* Top bar */}
         <header className="px-6 lg:px-7 pt-6 pb-5 flex flex-wrap items-start justify-between gap-5 relative z-10">
           <div className="space-y-1.5">
             <p className="text-[11px] uppercase tracking-[0.32em] font-[var(--font-label)] text-white/55">
-              Memory
+              The wall
             </p>
-            <h1 className="text-xl lg:text-2xl font-bold font-[var(--font-headline)] text-white tracking-tight">
+            <h3 className="text-lg lg:text-xl font-bold font-[var(--font-headline)] text-white tracking-tight">
               What we remember about you — the shape of it.
-            </h1>
+            </h3>
             <GraphCaption
               state={state}
               memoryCount={memoryCount}
@@ -157,7 +168,10 @@ export default function MemoryPage() {
                       style={
                         active
                           ? { background: meta.soft, color: meta.hex }
-                          : { background: "transparent", color: "rgba(255,255,255,0.4)" }
+                          : {
+                              background: "transparent",
+                              color: "rgba(255,255,255,0.4)",
+                            }
                       }
                     >
                       <span className="material-symbols-outlined text-[14px]">
@@ -247,6 +261,19 @@ export default function MemoryPage() {
           </div>
         </div>
       </GlassCard>
+    </section>
+  );
+}
+
+function SectionHeading() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="material-symbols-outlined text-[20px] text-[var(--color-warm)]">
+        hub
+      </span>
+      <h2 className="text-sm uppercase tracking-[0.28em] font-[var(--font-label)] font-semibold text-white/70">
+        What they remember
+      </h2>
     </div>
   );
 }
@@ -264,9 +291,7 @@ function GraphCaption({
     return <p className="text-xs text-white/45 min-h-[1.2em]" aria-hidden />;
   }
   if (state.layout.nodes.length === 0) {
-    return (
-      <p className="text-xs text-white/45">The graph grows as you talk.</p>
-    );
+    return <p className="text-xs text-white/45">The graph grows as you talk.</p>;
   }
   if (state.layout.isSample) {
     // The backend served its placeholder generator — say so, gently.
@@ -334,9 +359,9 @@ function EmptyWall() {
           ))}
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-bold font-[var(--font-headline)] text-white">
+          <h3 className="text-xl font-bold font-[var(--font-headline)] text-white">
             Nothing on the wall yet.
-          </h2>
+          </h3>
           <p className="text-sm text-white/55 leading-relaxed">
             That&apos;s the honest answer — we only keep what you actually tell
             us. Come talk, and the first conversation hangs the first thread.

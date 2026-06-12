@@ -6,11 +6,19 @@ import AuroraButton from "@/components/ui/AuroraButton";
 import GlassCard from "@/components/ui/GlassCard";
 import MemberAvatar from "@/components/ui/MemberAvatar";
 import { COUNCIL_MEMBERS, councilColors } from "@/lib/design-tokens";
-import { PAST_DEBATES, QUICK_MOTIONS } from "@/lib/debate-fixtures";
+import type { CouncilMemberId } from "@/lib/design-tokens";
+import { QUICK_MOTIONS } from "@/lib/debate-fixtures";
+import { SIDE } from "./palette";
 
 interface SetupScreenProps {
   onBegin: (motion: string) => void;
 }
+
+// How the council lines up by default: Sage holds the gavel, the other
+// four split into two corners. Mirrors the backend's default seating.
+const PRO_PREVIEW: ReadonlyArray<CouncilMemberId> = ["aria", "echo"];
+const CON_PREVIEW: ReadonlyArray<CouncilMemberId> = ["rex", "nova"];
+const MOD_PREVIEW: CouncilMemberId = "sage";
 
 export default function SetupScreen({ onBegin }: SetupScreenProps) {
   const [motionText, setMotionText] = useState("");
@@ -91,7 +99,10 @@ export default function SetupScreen({ onBegin }: SetupScreenProps) {
           </AuroraButton>
         </form>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] text-white/40 font-[var(--font-label)] uppercase tracking-[0.24em] mr-1">
+            Or try
+          </span>
           {QUICK_MOTIONS.map((q) => (
             <button
               key={q}
@@ -108,35 +119,94 @@ export default function SetupScreen({ onBegin }: SetupScreenProps) {
         </div>
       </GlassCard>
 
-      {/* Past debates */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
+      {/* Honest empty state — no fabricated history. Just how it'll look. */}
+      <section className="rounded-3xl border border-dashed border-white/[0.07] bg-white/[0.015] p-7 md:p-8">
+        <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
           <h2 className="font-[var(--font-headline)] font-bold text-xl text-white">
-            Things they&rsquo;ve already argued about
+            How a debate plays out
           </h2>
-          <p className="text-[11px] text-white/45 font-[var(--font-label)] uppercase tracking-[0.32em]">
-            {PAST_DEBATES.length} settled-ish
+          <p className="text-[11px] text-white/40 font-[var(--font-label)] uppercase tracking-[0.32em]">
+            No debates yet
           </p>
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
-          {PAST_DEBATES.map((d) => (
-            <div
-              key={d.id}
-              className="shrink-0 w-72 md:w-80 snap-start glass rounded-2xl p-6 hover:bg-white/[0.04] hover:-translate-y-0.5 transition-all cursor-pointer"
-            >
-              <h3 className="font-[var(--font-headline)] font-bold text-base mb-2 line-clamp-2 text-white">
-                {d.title}
-              </h3>
-              <p className="text-white/55 text-xs mb-4 line-clamp-2 leading-relaxed">
-                {d.conclusion}
-              </p>
-              <span className="text-[10px] uppercase tracking-wider text-white/40 font-[var(--font-label)]">
-                {d.meta}
-              </span>
-            </div>
-          ))}
+
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center mb-6">
+          <SidePreview sideKey="pro" members={PRO_PREVIEW} />
+          <ModPreview id={MOD_PREVIEW} />
+          <SidePreview sideKey="con" members={CON_PREVIEW} align="right" />
         </div>
+
+        <p className="text-sm text-white/55 leading-relaxed max-w-xl">
+          Pick a motion above and watch them go at it — two corners trade
+          arguments and rebuttals, round by round, until{" "}
+          <span style={{ color: councilColors.sage.hex }}>Sage</span> reads the
+          room and calls it. Nothing happens here until you start one.
+        </p>
       </section>
     </m.div>
+  );
+}
+
+function SidePreview({
+  sideKey,
+  members,
+  align = "left",
+}: {
+  sideKey: "pro" | "con";
+  members: ReadonlyArray<CouncilMemberId>;
+  align?: "left" | "right";
+}) {
+  const s = SIDE[sideKey];
+  return (
+    <div
+      className="rounded-2xl p-4 border border-white/[0.06]"
+      style={{
+        background: `linear-gradient(${align === "right" ? "225deg" : "135deg"}, ${s.soft}, rgba(26,22,32,0.6))`,
+      }}
+    >
+      <div
+        className={`flex items-center gap-1.5 mb-3 ${align === "right" ? "justify-end" : ""}`}
+      >
+        <span
+          className="w-1.5 h-1.5 rounded-full"
+          style={{ background: s.hex }}
+        />
+        <span
+          className="text-[10px] tracking-[0.32em] uppercase font-[var(--font-label)] font-semibold"
+          style={{ color: s.hex }}
+        >
+          {s.label}
+        </span>
+      </div>
+      <div
+        className={`flex items-center gap-3 ${align === "right" ? "justify-end" : ""}`}
+      >
+        {members.map((id) => (
+          <span key={id} className="animate-pulse-soft">
+            <MemberAvatar id={id} size="md" status="online" />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ModPreview({ id }: { id: CouncilMemberId }) {
+  const member = COUNCIL_MEMBERS.find((c) => c.id === id);
+  return (
+    <div className="flex flex-col items-center gap-1.5 px-4 text-center">
+      <span className="text-[10px] tracking-[0.28em] uppercase font-[var(--font-label)] text-white/45">
+        Moderator
+      </span>
+      <span className="animate-pulse-soft">
+        <MemberAvatar id={id} size="lg" status="online" />
+      </span>
+      <span
+        className="text-xs font-bold"
+        style={{ color: councilColors[id].hex }}
+      >
+        {member?.name}
+      </span>
+    </div>
   );
 }
