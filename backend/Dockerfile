@@ -19,7 +19,9 @@ RUN pip install -r requirements.txt
 # App source (everything except what .dockerignore excludes).
 COPY . .
 
-# Fly routes public HTTPS → this internal port (see fly.toml internal_port).
+# Listens on $PORT when the host provides one (e.g. Render), otherwise 8000.
+# On Hugging Face set the Space's `app_port: 8000`; on Fly it's internal_port=8000.
 EXPOSE 8000
 
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Shell form so ${PORT:-8000} expands at runtime.
+CMD python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
